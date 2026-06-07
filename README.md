@@ -53,7 +53,7 @@ ignored by `.gitignore` and therefore not stored in this repository:
 
 ---
 
-## Team Information
+## Group 07 - Team Information
 
 **Instructor:** PhD. Nguyen Vinh Tiep
 
