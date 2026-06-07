@@ -156,11 +156,11 @@
 \titre{Đề tài: \\
 Tên tiếng Việt: Đếm đối tượng Zero-shot với mẫu chất lượng \\
 Tên tiếng Anh: Zero-shot Object Counting with Good Exemplars}
-\sujet{NHẬN DẠNG -- CS338.Q21 \\ BÁO CÁO ĐỒ ÁN}
+\sujet{CÁC KỸ THUẬT HỌC SÂU VÀ ỨNG DỤNG -- CS431.Q22 \\ BÁO CÁO ĐỒ ÁN}
 \UE{ }
-\enseignant{TS. Dương Việt Hằng}
+\enseignant{TS. Nguyễn Vinh Tiệp}
 \eleves{Nguyễn Công Phát -- 23521143 (Nhóm trưởng) \\
-Mai Thái Bình -- 23520158 \\
+Nguyễn Lê Phong -- 23521168 \\
 Vũ Việt Cương -- 23520213}
 
 \fairemarges
@@ -174,11 +174,21 @@ Vũ Việt Cương -- 23520213}
 \listoftables
 \newpage
 
+%---- TÓM TẮT ------
+\chapter*{TÓM TẮT}
+\addcontentsline{toc}{chapter}{TÓM TẮT}
+
+Báo cáo này trình bày kết quả nghiên cứu và hiện thực hệ thống \textbf{VA-Count}~\cite{vacount} -- một phương pháp \textit{zero-shot object counting} sử dụng exemplar tốt để đếm đối tượng trong ảnh mà không cần cung cấp mẫu thủ công. Hệ thống nhận đầu vào là một ảnh RGB và một văn bản mô tả lớp đối tượng cần đếm, sau đó tự động sinh mẫu qua module \textit{Exemplar Enhancement Module} (EEM) và dự đoán số lượng qua module \textit{Noise Suppression Module} (NSM) với cơ chế học tương phản.
+
+Nhóm mở rộng VA-Count theo hai hướng độc lập: (i)~tích hợp \textit{Rich Prompts} -- dùng mô hình ngôn ngữ đa phương thức (Gemini) để sinh mô tả phong phú kết hợp CLIP re-ranking nhằm cải thiện chất lượng exemplar; và (ii)~thay thế GroundingDINO bằng \textit{YOLO-World} để giải quyết nút thắt cổ chai về tốc độ (chiếm $\sim$80\% thời gian pipeline). Kết quả đánh giá trên bộ dữ liệu FSC-147 với bốn cấu hình cho thấy MAE dao động từ $17{,}80$ đến $19{,}03$, trong đó cấu hình YOLO-World + Rich Prompt ($17{,}91$) gần như bắt kịp baseline ($17{,}99$) với tốc độ suy luận nhanh hơn $\approx$2,5$\times$.
+
+Một phát hiện quan trọng của đồ án là \textbf{giả thuyết bão hòa ngữ nghĩa}: bộ phát hiện mạnh về ngữ nghĩa (GroundingDINO) hưởng lợi rất ít từ Rich Prompt ($\Delta\mathrm{MAE} = 0{,}19$), trong khi bộ phát hiện nhẹ hơn (YOLO-World) hưởng lợi đáng kể ($\Delta\mathrm{MAE} = 1{,}12$). Ngoài ra, nhóm chỉ ra tính chất \textit{prompt faithfulness} của YOLO-World: mô hình chỉ phát hiện đối tượng khi prompt thực sự khớp với nội dung ảnh, trái với GroundingDINO vốn có thể trả về kết quả không trung thực với prompt đầu vào.
+
 %---- LỜI NÓI ĐẦU ------
 \chapter*{LỜI NÓI ĐẦU}
 \addcontentsline{toc}{chapter}{LỜI NÓI ĐẦU}
 
-Lời đầu tiên, nhóm chúng em xin bày tỏ lòng biết ơn sâu sắc đến cô \textbf{TS. Dương Việt Hằng}, người đã tận tình hướng dẫn, định hướng và truyền đạt những kiến thức quý báu trong môn học \textit{Nhận dạng (CS338.Q21)}. Sự góp ý chuyên môn và những buổi trao đổi của cô đã giúp nhóm hiểu rõ hơn về bài toán đếm đối tượng zero-shot, hệ thống VA-Count cũng như cách đánh giá khoa học một mô hình thị giác máy tính trên bộ dữ liệu FSC147.\\[1em]
+Lời đầu tiên, nhóm chúng em xin bày tỏ lòng biết ơn sâu sắc đến cô \textbf{TS. Nguyễn Vinh Tiệp}, người đã tận tình hướng dẫn, định hướng và truyền đạt những kiến thức quý báu trong môn học \textit{Kỹ thuật học sâu và ứng dụng (CS431.Q22)}. Sự góp ý chuyên môn và những buổi trao đổi của cô đã giúp nhóm hiểu rõ hơn về bài toán đếm đối tượng zero-shot, hệ thống VA-Count cũng như cách đánh giá khoa học một mô hình thị giác máy tính trên bộ dữ liệu FSC147.\\[1em]
 Đồ án này hiện thực lại hệ thống VA-Count~\cite{vacount} từ bài báo gốc và mở rộng theo hai hướng nghiên cứu độc lập: (i)~tích hợp \textit{Rich Prompts}~\cite{richprompts} nhằm khai thác ngữ nghĩa chi tiết từ Multimodal LLM cho bước sinh mẫu (exemplar), và (ii)~thay thế GroundingDINO bằng \textit{YOLO-World}~\cite{yoloworld} để giải quyết nút thắt cổ chai (bottleneck) về tốc độ trong khâu phát hiện (detection). Qua đó, nhóm đã tiến hành đánh giá hệ thống trên bốn cấu hình (baseline, +Rich Prompt, +YOLO-World, +YOLO-World+Rich Prompt) nhằm phân tích ảnh hưởng của từng thành phần đến chất lượng đếm (MAE, RMSE) và thời gian suy luận (inference). Toàn bộ kết quả thực nghiệm được lấy từ log huấn luyện của chính nhóm và được dẫn nguồn rõ ràng tại Chương~\ref{ch:experiments}.\\[1em]
 Chúng em cũng xin chân thành cảm ơn các bạn lớp CS338.Q21 đã cùng thảo luận và đóng góp ý kiến trong suốt quá trình thực hiện. Nhóm rất mong nhận được thêm góp ý từ cô để hoàn thiện đồ án này.\\[1em]
 \begin{flushright}
@@ -201,7 +211,7 @@ Bảng~\ref{tab:phan_cong} trình bày phân công nhiệm vụ trong nhóm CS33
 Nguyễn Công Phát & 23521143 & 34\% & Nhóm trưởng &
 Hiện thực và thực nghiệm hai cấu hình mở rộng: VA-Count với YOLO-World và VA-Count với YOLO-World + Rich Prompt; tổ chức cấu trúc dự án và tích hợp pipeline huấn luyện/đánh giá; viết Chương~1 (Tổng quan) và Chương~5 (Kết luận). \\
 \hline
-Mai Thái Bình & 23520158 & 33\% & Thành viên &
+Nguyễn Lê Phong & 23521168 & 33\% & Thành viên &
 Hiện thực Module Rich Prompt (Gemini 2.5 Flash) và thực nghiệm cấu hình VA-Count + Rich Prompt; chạy các thử nghiệm đánh giá MAE/RMSE; thiết kế bảng kết quả và biểu đồ phân tích; viết phần Rich Prompt trong Chương~2 và phần phân tích lỗi sai. \\
 \hline
 Vũ Việt Cương & 23520213 & 33\% & Thành viên &
@@ -293,6 +303,20 @@ Hình~\ref{fig:vis_posneq} minh họa cách hệ thống VA-Count hoạt động
     \item \textbf{Phân tích hiện tượng bão hòa ngữ nghĩa.} Qua kết quả thực nghiệm, nhóm chỉ ra rằng GroundingDINO đã đạt gần ngưỡng bão hòa đối với thông tin text đầu vào (Rich Prompt chỉ giảm MAE $0{,}19$), trong khi YOLO-World (vốn yếu hơn về ngữ nghĩa) được hưởng lợi đáng kể từ Rich Prompt (giảm MAE $1{,}12$). Phát hiện này cung cấp cơ sở thực nghiệm cho việc lựa chọn chiến lược prompting phù hợp với từng bộ phát hiện.
 \end{enumerate}
 Một chi tiết cài đặt được nêu rõ để tiện đối chiếu với hai bài báo gốc khi đọc Chương~\ref{ch:method}: phiên bản Gemini sử dụng tại thời điểm cài đặt là \texttt{gemini-2.5-flash}~\cite{gemini}.
+
+\section{Bố cục báo cáo}
+Báo cáo được tổ chức thành năm chương như sau:
+
+\begin{itemize}
+    \item \textbf{Chương~1 -- Tổng quan đề tài} (chương này): mô tả bài toán zero-shot object counting, lý do chọn VA-Count làm baseline, phát biểu chính thức bài toán, các đóng góp của đồ án và bố cục tài liệu.
+    \item \textbf{Chương~2 -- Phương pháp thực hiện}: trình bày kiến trúc hệ thống VA-Count gốc (EEM + NSM), hai hướng mở rộng (Rich Prompts và YOLO-World) cùng chi tiết cài đặt và bảng tổng hợp bốn cấu hình thực nghiệm.
+    \item \textbf{Chương~3 -- Thực nghiệm và kết quả}: mô tả bộ dữ liệu FSC-147, độ đo đánh giá (MAE, RMSE), thiết lập thực nghiệm, so sánh định lượng bốn cấu hình và phân tích lỗi sai.
+    \item \textbf{Chương~4 -- Demo và đánh giá hệ thống}: hướng dẫn cài đặt và chạy ứng dụng Streamlit demo, mô tả giao diện người dùng và đánh giá định tính trên các ảnh thực tế.
+    \item \textbf{Chương~5 -- Kết luận và hướng phát triển}: tổng kết kết quả, phân tích giả thuyết bão hòa ngữ nghĩa và đề xuất các hướng cải tiến trong tương lai.
+\end{itemize}
+
+\bigskip
+\noindent\textit{\textbf{Kết chương~1.} Chương này đã thiết lập nền tảng lý luận cho toàn bộ đồ án: bài toán đếm zero-shot, lý do chọn VA-Count, các đóng góp và bố cục tài liệu. Chương~2 tiếp theo sẽ trình bày chi tiết kiến trúc hệ thống và hai hướng mở rộng được đề xuất.}
 
 %==================================================================
 %                          CHƯƠNG 2
@@ -425,7 +449,7 @@ Chi tiết các prompt mẫu được thiết kế để định hướng mô h�
 
 \begin{lstlisting}[style=bashstyle,caption={Mẫu Positive Prompt (Feature extraction)},label=lst:pos_prompt]
 Look at the image and provide the visual definition
-of a single '{singular_name}'.
+of a single '{class_name}'.
 
 Task: Describe the intrinsic physical appearance of
 just ONE instance, as if it were isolated.
@@ -433,7 +457,7 @@ just ONE instance, as if it were isolated.
 STRICT RULES:
 1. Subject: Describe ONE item only.
    Ignore the background or other identical items.
-2. Format: Start with 'single {singular_name}'.
+2. Format: Start with 'single {class_name}'.
    Use dot-separated phrases.
 3. Content: Focus on Shape, Color, Material.
 
@@ -442,7 +466,7 @@ BAD:  keyboard key . rows of buttons . full layout .
 GOOD: single keyboard key . square shape .
       black plastic material . white printed letter .
 
-Your output for '{singular_name}':
+Your output for '{class_name}':
 \end{lstlisting}
 
 \begin{lstlisting}[style=bashstyle,caption={Mẫu Negative Prompt (Loại bỏ nhiễu)},label=lst:neg_prompt]
@@ -529,6 +553,41 @@ Vấn đề này đặc biệt nghiêm trọng khi triển khai thực tế:
     \item \textbf{Thời gian chuẩn bị dữ liệu.} Trên  toàn bộ 6\,135 ảnh FSC-147, GroundingDINO tốn $\approx$13 giờ cho cả hai luồng (positive + negative). Con số này tăng lên 25 giờ khi bật Rich Prompt. Đây là rào cản lớn cho việc thử nghiệm nhanh các cấu hình khác nhau.
     \item \textbf{Ứng dụng tương tác.} Khi chạy demo, người dùng cần chờ $\sim$1,2 giây/ảnh chỉ cho bước phát hiện (tương đương $\sim$80\% tổng pipeline 1,47 s; xem Bảng~\ref{tab:demo_time}), chưa kể bước sinh bản đồ mật độ. Yêu cầu phản hồi nhanh trong ứng dụng thực tế đòi hỏi thời gian xử lý dưới 1 giây tổng.
 \end{itemize}
+Ngoài vấn đề tốc độ, nhóm nhận thấy GroundingDINO có hành vi \textbf{không trung thực với text prompt} (prompt unfaithfulness): do cơ chế cross-modal fusion cho phép mô hình ``neo'' vùng ảnh vào token ngôn ngữ theo nghĩa ngữ cảnh rộng, GroundingDINO có thể trả về detection box ngay cả khi prompt không khớp với nội dung ảnh. Ví dụ minh họa tại Hình~\ref{fig:prompt_faithfulness}: khi prompt là \texttt{"lion"} trên ảnh chứa chim hồng hạc, GroundingDINO vẫn phát hiện và đếm được 14 đối tượng - hoàn toàn sai về mặt ngữ nghĩa. Ngược lại, YOLO-World sử dụng CLIP embedding để so sánh trực tiếp cosine similarity giữa visual patch và text class; khi prompt là \texttt{"lion"}, độ tương đồng với các patch chim quá thấp nên mô hình trả về \textit{không có đối tượng nào} (zero detections). Chỉ khi prompt đúng (\texttt{"bird"}), YOLO-World mới phát hiện và đếm chính xác. Tính chất \textit{faithful to prompt} này đặc biệt quan trọng trong ứng dụng thực tế, nơi người dùng cần hệ thống đếm \emph{đúng thứ họ yêu cầu}, không phải đếm bất kỳ vật thể nào có hình dạng tương tự.
+
+\begin{figure}[H]
+    \centering
+    % Row 0: ảnh đầu vào
+    \subcaptionbox{Ảnh đầu vào: chim hồng hạc\label{fig:pf_input}}{%
+        \figureorplaceholder{figures/sample_bird.jpg}{0.55\textwidth}{Ảnh đầu vào gốc: chim hồng hạc.}%
+    }
+    \par\bigskip
+    % Row 1: GroundingDINO + prompt "lion"
+    \subcaptionbox{GroundingDINO: nhập prompt \texttt{"lion"}\label{fig:pf_gdino_input}}{%
+        \figureorplaceholder{figures/sample_bird_GroundingDINO_prompt-lion.png}{0.48\textwidth}{GroundingDINO với prompt lion -- giao diện nhập.}%
+    }\hfill
+    \subcaptionbox{Kết quả: Count $= 14$ {\color{red}$\times$} (sai)\label{fig:pf_gdino_count}}{%
+        \figureorplaceholder{figures/sample_bird_GroundingDINO_prompt-lion_count.png}{0.48\textwidth}{GroundingDINO với prompt lion -- kết quả đếm sai.}%
+    }
+    \par\bigskip
+    % Row 2: YOLO-World + prompt "lion"
+    \subcaptionbox{YOLO-World: nhập prompt \texttt{"lion"}\label{fig:pf_yolo_lion_input}}{%
+        \figureorplaceholder{figures/sample_bird_YoloWorld_prompt-lion.png}{0.48\textwidth}{YOLO-World với prompt lion -- giao diện nhập.}%
+    }\hfill
+    \subcaptionbox{Kết quả: No objects detected {\color{green!60!black}$\checkmark$}\label{fig:pf_yolo_lion_nocount}}{%
+        \figureorplaceholder{figures/sample_bird_YoloWorld_prompt-lion_no-count.png}{0.48\textwidth}{YOLO-World với prompt lion -- không phát hiện đối tượng.}%
+    }
+    \par\bigskip
+    % Row 3: YOLO-World + prompt "bird"
+    \subcaptionbox{YOLO-World: nhập prompt \texttt{"bird"}\label{fig:pf_yolo_bird_input}}{%
+        \figureorplaceholder{figures/sample_bird_YoloWorld_prompt-bird.png}{0.48\textwidth}{YOLO-World với prompt bird -- giao diện nhập.}%
+    }\hfill
+    \subcaptionbox{Kết quả: Count $= 14$ {\color{green!60!black}$\checkmark$} (đúng)\label{fig:pf_yolo_bird_count}}{%
+        \figureorplaceholder{figures/sample_bird_YoloWorld_prompt-bird_count.png}{0.48\textwidth}{YOLO-World với prompt bird -- đếm chính xác.}%
+    }
+    \caption{Minh họa tính chất \textit{prompt faithfulness} của YOLO-World so với GroundingDINO. Ảnh đầu vào chứa chim hồng hạc. GroundingDINO với prompt \texttt{"lion"} vẫn trả về Count $= 14$ (sai). YOLO-World với prompt \texttt{"lion"} trả về \textit{zero detections} nhờ CLIP cosine similarity thấp; chỉ với prompt đúng \texttt{"bird"} mới đếm chính xác Count $= 14$.}
+    \label{fig:prompt_faithfulness}
+\end{figure}
 
 \subsection{Lựa chọn YOLO-World}
 
@@ -558,6 +617,34 @@ YOLO-World đạt 35 mAP với 50--80 FPS trên LVIS minival, so với 27 mAP v�
     \caption{Kiến trúc hệ thống sau khi thay GroundingDINO bằng YOLO-World ở module phát hiện. Sơ đồ chuyển vẽ theo thiết kế của VA-Count~\cite{vacount} với phần detection được thay theo YOLO-World~\cite{yoloworld}.}
     \label{fig:system_yolo}
 \end{figure}
+
+\section{Tổng hợp bốn cấu hình thực nghiệm}
+\label{sec:config-summary}
+
+Bảng~\ref{tab:config_summary} tóm tắt bốn cấu hình hệ thống được đánh giá trong đồ án, giúp người đọc nắm nhanh sự khác nhau giữa các cấu hình trước khi xem kết quả chi tiết tại Chương~\ref{ch:experiments}.
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|l|c|c|c|c|p{5.5cm}|}
+\hline
+\textbf{Cấu hình} & \textbf{Detector} & \textbf{Rich Prompt} & \textbf{Re-rank (CLIP)} & \textbf{top-k} & \textbf{Ưu điểm chính} \\
+\hline
+Baseline & GDino & \texttimes & \texttimes & 3 & Tái hiện trung thực VA-Count gốc; điểm tham chiếu. \\
+\hline
++Rich Prompt & GDino & \checkmark & \checkmark & 3 & Exemplar chất lượng cao hơn nhờ mô tả Gemini + CLIP re-rank. \\
+\hline
++YOLO-World & YOLO & \texttimes & \texttimes & 3 & Tốc độ nhanh hơn $\sim$20$\times$; prompt faithful nhờ CLIP cosine. \\
+\hline
++YOLO+RP & YOLO & \checkmark & \checkmark & 3 & Kết hợp tốc độ YOLO-World và ngữ nghĩa phong phú từ Rich Prompt. \\
+\hline
+\end{tabular}
+\caption{Tổng hợp bốn cấu hình thực nghiệm: Detector (GDino = GroundingDINO, YOLO = YOLO-World), Rich Prompt (bật/tắt Gemini expansion + CLIP re-rank), top-k (số exemplar dương). Kết quả định lượng xem Bảng~\ref{tab:main_results}.}
+\label{tab:config_summary}
+\end{table}
+
+\bigskip
+\noindent\textit{\textbf{Kết chương~2.} Chương này đã trình bày toàn bộ kiến trúc hệ thống -- từ VA-Count baseline (EEM + NSM) đến hai hướng mở rộng (Rich Prompts, YOLO-World) -- và tóm gọn bốn cấu hình sẽ được đánh giá. Chương~3 tiếp theo sẽ trình bày kết quả định lượng và định tính của các cấu hình này trên bộ dữ liệu FSC-147.}
 
 %==================================================================
 %                          CHƯƠNG 3
@@ -724,7 +811,7 @@ Nhìn tổng thể, bốn cấu hình cho kết quả MAE trong khoảng hẹp $
 \begin{itemize}
     \item \textbf{Rich Prompt nâng nhẹ chất lượng đếm:} MAE giảm từ 17,99 xuống 17,80 trên VA-Count gốc ($\Delta = 0{,}19$). Mức cải thiện khiêm tốn này cho thấy GroundingDINO vốn đã có năng lực hiểu ngữ nghĩa mạnh nhờ kiến trúc hợp nhất đa phương thức (cross-modal fusion), và đã đạt gần \emph{ngưỡng bão hòa ngữ nghĩa} (semantic saturation) đối với thông tin đầu vào dạng văn bản. Nói cách khác, GroundingDINO đã khai thác gần hết lượng thông tin ngữ nghĩa có thể rút trích từ tên lớp, nên bổ sung thêm mô tả chi tiết từ LLM không mang lại lợi ích đáng kể cho giai đoạn phát hiện.
 
-    \item \textbf{YOLO-World đơn lẻ có MAE cao hơn baseline} (19,03 so với 17,99). Nguyên nhân chính là mô hình nhẹ này, dù nhanh hơn đáng kể, có năng lực nhận dạng ngữ nghĩa yếu hơn GroundingDINO, dẫn đến nhiễu phát hiện (detection noise) cao hơn ở giai đoạn trích xuất mẫu. Cụ thể, YOLO-World sử dụng chiến lược Prompt-then-Detect (mã hóa ngoại tuyến text prompt), nên không có cơ chế tương tác thị giác-ngôn ngữ (vision-language interaction) tại thời điểm suy luận, dẫn đến khả năng phân biệt đối tượng mục tiêu và nhiễu nền kém hơn so với GroundingDINO.
+    \item \textbf{YOLO-World đơn lẻ có MAE cao hơn baseline} (19,03 so với 17,99). Nguyên nhân chính là mô hình nhẹ này, dù nhanh hơn đáng kể, có năng lực nhận dạng ngữ nghĩa yếu hơn GroundingDINO, dẫn đến nhiễu phát hiện (detection noise) cao hơn ở giai đoạn trích xuất mẫu. Cụ thể, YOLO-World sử dụng chiến lược Prompt-then-Detect (mã hóa ngoại tuyến text prompt), nên không có cơ chế tương tác thị giác-ngôn ngữ (vision-language interaction) tại thời điểm suy luận, dẫn đến khả năng phân biệt đối tượng mục tiêu và nhiễu nền kém hơn so với GroundingDINO. Tuy nhiên, cần lưu ý rằng MAE cao hơn của YOLO-World \emph{không xuất phát từ false positive} (phát hiện nhầm lớp không đúng): trái lại, tính chất \textit{faithful-to-prompt} khiến YOLO-World có ít false positive hơn GroundingDINO --- như minh họa tại Hình~\ref{fig:prompt_faithfulness}, YOLO-World từ chối phát hiện hoàn toàn khi prompt sai. Nguyên nhân thực sự của MAE cao hơn là YOLO-World \textbf{bỏ sót} (false negative) một số đối tượng đúng mà GroundingDINO nhặt được nhờ soft-matching ngữ nghĩa rộng. Trên FSC147, vì text prompt luôn là tên lớp chính xác, tính chất faithful-to-prompt không đem lại lợi thế về số liệu MAE; nhưng trong triển khai thực tế với prompt không chính xác, YOLO-World sẽ cho kết quả đáng tin cậy và có nghĩa hơn đáng kể.
 
     \item \textbf{YOLO-World + Rich Prompt đạt cân bằng tốt nhất:} Rich Prompt bù đắp được hạn chế nhận dạng của YOLO-World, giảm MAE từ 19,03 xuống 17,91 ($\Delta = 1{,}12$), gần ngang VA-Count gốc (17,99) nhưng với chi phí tính toán thấp hơn đáng kể (xem Bảng~\ref{tab:demo_time}). Mức cải thiện $\Delta = 1{,}12$ trên YOLO-World so với $\Delta = 0{,}19$ trên GroundingDINO khẳng định rằng: \emph{bộ phát hiện càng yếu về ngữ nghĩa, Rich Prompt càng mang lại lợi ích lớn}. Điều này gợi mở một chiến lược thiết kế hệ thống: kết hợp bộ phát hiện nhẹ với prompting thông minh có thể đạt hiệu quả tương đương bộ phát hiện nặng, nhưng với tốc độ nhanh hơn nhiều lần.
 \end{itemize}
@@ -1029,6 +1116,9 @@ Các vật thể có cấu trúc chia tách (cửa sổ nhiều ô, kính mắt)
 Mô hình dùng một bộ trích xuất đặc trưng (feature extractor) kiểu Masked Autoencoder + bản đồ mật độ. Quan sát thực tế cho thấy mô hình \emph{vẫn đưa ra ước lượng} ngay cả khi không lấy được mẫu hợp lệ, tuy nhiên sai số rất lớn (ví dụ ground truth $371$, dự đoán $251{,}55$). Hiện tượng này gợi ý rằng mô hình có xu hướng dựa vào các đặc trưng toàn cục (global feature) (mật độ, kết cấu, bố cục không gian) thay vì thực sự condition theo mẫu. Đây là một dạng \textbf{thiên lệch dữ liệu huấn luyện (training data bias)} khiến vai trò của mẫu trong quá trình suy luận bị suy giảm.\\[1em]
 Nguyên nhân có thể xuất phát từ việc mô hình học được các đặc trưng tương quan với mật độ đối tượng chung (như kết cấu lặp lại, bố cục đồng đều) trong quá trình huấn luyện trên FSC-147, một bộ dữ liệu có phân bố mật độ khá tập trung. Đây là hạn chế cơ bản của phương pháp đếm dựa trên bản đồ mật độ, đặc biệt trong các kịch bản mật độ cao hoặc phân bố phức tạp, và cần được giải quyết trong các phiên bản kế tiếp (xem Chương~\ref{ch:conclusion}).
 
+\bigskip
+\noindent\textit{\textbf{Kết chương~3.} Chương này đã trình bày toàn bộ kết quả định lượng và định tính trên FSC-147, phân tích ảnh hưởng của từng thành phần và phân loại các trường hợp lỗi sai. Chương~4 tiếp theo sẽ giới thiệu ứng dụng demo Streamlit và đánh giá định tính trên các ảnh thực tế ngoài tập dữ liệu.}
+
 %==================================================================
 %                          CHƯƠNG 4
 %==================================================================
@@ -1085,6 +1175,9 @@ Kiểm thử trên các ảnh khó từ FSC-147 và một số ảnh ngoài tậ
     \item Trên các ảnh dày đặc hoặc tên lớp mơ hồ, hệ thống bộc lộ đúng các lỗi đã phân loại ở Mục~\ref{sec:error-analysis}.
 \end{itemize}
 
+\bigskip
+\noindent\textit{\textbf{Kết chương~4.} Chương này đã trình bày ứng dụng demo Streamlit cho phép kiểm thử hệ thống trực quan với mọi ảnh đầu vào tùy ý. Chương~5 tiếp theo sẽ tổng kết toàn bộ kết quả, phân tích giả thuyết bão hòa ngữ nghĩa và đề xuất hướng phát triển tiếp theo.}
+
 %==================================================================
 %                          CHƯƠNG 5
 %==================================================================
@@ -1107,6 +1200,9 @@ Trên cơ sở các phân tích lỗi sai (Mục~\ref{sec:error-analysis}) và c
     \item \textbf{Giảm chi phí tính toán của Rich Prompt.} Thời gian xử lý $\approx 25$ giờ cho cấu hình GroundingDINO + Rich Prompt xuất phát chủ yếu từ việc gọi Gemini API \emph{riêng lẻ cho từng ảnh} trong bước sinh negative prompt (phụ thuộc nội dung ảnh cụ thể). Tuy nhiên, \emph{positive prompt} chỉ phụ thuộc vào tên lớp, không phụ thuộc vào ảnh cụ thể. Do đó, với FSC-147 có 147 lớp, toàn bộ positive prompts có thể được \textit{precompute} một lần ($\approx 147$ API calls, vài phút) và tái sử dụng cho mọi ảnh trong cùng lớp. Negative prompt có thể được xấp xỉ bằng class-level description (mô tả nền chung cho mỗi lớp) thay vì per-image call. Kết hợp hai kỹ thuật này có thể đưa tổng thời gian chuẩn bị dữ liệu của cấu hình GroundingDINO + Rich Prompt về mức tương đương YOLO-World + Rich Prompt ($\approx 4$ giờ), mở ra khả năng thực nghiệm nhanh hơn nhiều lần.
     \item \textbf{Triển khai sản phẩm.} Đóng gói pipeline trong Docker và triển khai trên dịch vụ HuggingFace Spaces / Vercel để tăng khả năng tiếp cận.
 \end{itemize}
+
+\bigskip
+\noindent\textit{\textbf{Kết chương~5.} Chương này đã tổng kết các kết quả đạt được, làm rõ giả thuyết bão hòa ngữ nghĩa và vạch ra các hướng phát triển tương lai. Danh sách tài liệu tham khảo đầy đủ được trình bày ở phần tiếp theo.}
 
 %==================================================================
 %                          BIBLIOGRAPHY

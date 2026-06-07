@@ -71,22 +71,22 @@
 % --- Title ---
 \title[Zero-shot Counting]{\textbf{Đếm đối tượng Zero-shot với mẫu chất lượng \\ (Zero-shot Object Counting with Good Exemplars)}}
 
-\author[CS338.Q21]{Nhóm 4 \\ Nguyễn Công Phát, Mai Thái Bình, Vũ Việt Cương \\23521143, \and 23520158, \and 23520213}
+\author[CS431.Q22]{Nhóm 7 \\ Nguyễn Công Phát, Nguyễn Lê Phong, Vũ Việt Cương \\23521143, \and 23521168, \and 23520213}
 \institute[UIT]{Trường Đại học Công nghệ Thông tin -- ĐHQG TP.HCM}
-\date{GVHD: TS. Dương Việt Hằng}
+\date{GVHD: TS. Nguyễn Vinh Tiệp}
    
 % --- Figure path ---
-\graphicspath{{figures/}}
+\graphicspath{{figures/}{../report/figures/}}
 
 % --- Footer ---
 \setbeamertemplate{footline}{
   \leavevmode%
   \hbox{%
     \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.2ex,dp=1ex,center]{author in head/foot}%
-      TS. Dương Việt Hằng
+      TS. Nguyễn Vinh Tiệp
     \end{beamercolorbox}%
     \begin{beamercolorbox}[wd=.34\paperwidth,ht=2.2ex,dp=1ex,center]{title in head/foot}%
-      CS338.Q21 -- Nhận dạng
+      CS431.Q22 -- Các kỹ thuật học sâu và ứng dụng
     \end{beamercolorbox}%
     \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.2ex,dp=1ex,center]{date in head/foot}%
       \today  \hspace{1em} \insertframenumber{} / \inserttotalframenumber
@@ -249,7 +249,7 @@
 \draw[->, thick] (model) -- (output);
 \end{tikzpicture}%
 }
-\end{frame}
+    \end{frame}
 
 % --- 1.4 Lý do chọn VA-Count ---
 \begin{frame}[shrink=10]{1.4. Lý do chọn VA-Count làm baseline}
@@ -464,8 +464,9 @@ $\mathcal{L}_C$ ép $D_p$ luôn gần $D_g$ hơn $D_n$. $\mathcal{L}_D$ đảm b
 \end{frame}
 
 
+
 % --- 2.2 Rich Prompts ---
-\begin{frame}[fragile, shrink=15]{2.2. Cải tiến với Rich Prompts}
+\begin{frame}[fragile, shrink=15]{2.2. Cải tiến với Rich Prompts - Module Enhanced Prompt}
 \scriptsize
 
 \begin{columns}[T,onlytextwidth]
@@ -578,6 +579,8 @@ Your output for this image:
 
 \end{frame}
 
+
+
 % --- 2.2 (tiếp) Rich Prompts - Architecture ---
 \begin{frame}{2.2. Cải tiến với Rich Prompts -- Kiến trúc (tt.)}
 \scriptsize
@@ -634,10 +637,8 @@ Your output for this image:
 
 \end{frame}
 
-
-
 % --- 2.3 YOLO-World ---
-\begin{frame}[fragile]{2.3. Cải tiến với YOLO-World}
+\begin{frame}[fragile, shrink = 5]{2.3. Cải tiến với YOLO-World}
 \scriptsize
 
 \begin{columns}[T,onlytextwidth]
@@ -650,6 +651,7 @@ Your output for this image:
   \item Chiếm $\sim$80\% thời gian xử lý mỗi ảnh.
   \item 6\,135 ảnh FSC-147: $\approx$13 giờ (baseline), 25 giờ (+Rich Prompt).
   \item Demo: $\sim$1,2s/ảnh chỉ cho bước phát hiện (tương đương $\sim$80\% tổng pipeline).
+  \item \textbf{Prompt unfaithful:} phát hiện đối tượng bất kể prompt có đúng hay không (xem ví dụ tiếp theo).
 \end{itemize}
 \end{block}
 
@@ -674,6 +676,80 @@ Your output for this image:
 
 \end{column}
 \end{columns}
+
+\end{frame}
+
+
+% --- 2.3 Prompt Faithfulness: GDino unfaithful ---
+\begin{frame}{2.3. Giới hạn: GroundingDINO không trung thực với Prompt}
+\scriptsize
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.24\textwidth}
+\begin{center}
+  \includegraphics[width=\textwidth]{sample_bird.jpg}
+  \captionof{figure}{Ảnh đầu vào chứa chim hồng hạc.}
+\end{center}
+\end{column}
+\begin{column}{0.37\textwidth}
+\begin{center}
+  \includegraphics[width=\textwidth]{sample_bird_GroundingDINO_prompt-lion.png}
+  \captionof{figure}{GDino: nhập prompt \texttt{"lion"}.}
+\end{center}
+\end{column}
+\begin{column}{0.37\textwidth}
+\begin{center}
+  \includegraphics[width=\textwidth]{sample_bird_GroundingDINO_prompt-lion_count.png}
+  \captionof{figure}{Kết quả: Count $= 14$ {\color{red}$\times$} (sai!).}
+\end{center}
+\end{column}
+\end{columns}
+
+\vspace{0.4em}
+\setbeamercolor{block title}{bg=red!70!black, fg=white}
+\setbeamercolor{block body}{bg=red!5!white}
+\begin{block}{\textbf{GroundingDINO: Prompt Unfaithful}}
+  Cross-modal fusion cho phép mô hình \textbf{bỏ qua ngữ nghĩa prompt} --- nhập \texttt{"lion"} trên ảnh chứa hồng hạc, vẫn phát hiện và đếm được 14 đối tượng.
+\end{block}
+
+\end{frame}
+
+
+% --- 2.3 Prompt Faithfulness: YOLO faithful ---
+\begin{frame}[fragile, shrink=10]{2.3. YOLO-World: Trung thực với Prompt}
+\scriptsize
+
+\begin{columns}[T,onlytextwidth]
+% Left: YOLO + lion
+\begin{column}{0.48\textwidth}
+  \begin{center}
+    \includegraphics[width=0.75\textwidth]{sample_bird_YoloWorld_prompt-lion.png}
+    \captionof{figure}{YOLO: nhập prompt \texttt{"lion"}.}
+  \end{center}
+  \begin{center}
+    \includegraphics[width=0.75\textwidth]{sample_bird_YoloWorld_prompt-lion_no-count.png}
+    \captionof{figure}{Kết quả: 0 detections {\color{green!60!black}$\checkmark$}.}
+  \end{center}
+\end{column}
+% Right: YOLO + bird
+\begin{column}{0.48\textwidth}
+  \begin{center}
+    \includegraphics[width=0.75\textwidth]{sample_bird_YoloWorld_prompt-bird.png}
+    \captionof{figure}{YOLO: nhập prompt \texttt{"bird"}.}
+  \end{center}
+  \begin{center}
+    \includegraphics[width=0.75\textwidth]{sample_bird_YoloWorld_prompt-bird_count.png}
+    \captionof{figure}{Kết quả: Count $= 14$ {\color{green!60!black}$\checkmark$}.}
+  \end{center}
+\end{column}
+\end{columns}
+
+\vspace{0.2em}
+\setbeamercolor{block title}{bg=teal!70!black, fg=white}
+\setbeamercolor{block body}{bg=teal!5!white}
+\begin{block}{\textbf{YOLO-World: Prompt Faithful}}
+  CLIP cosine similarity đảm bảo chỉ detect khi prompt khớp ngữ nghĩa --- \texttt{"lion"} $\to$ 0 detections; \texttt{"bird"} $\to$ Count $= 14$.
+\end{block}
 
 \end{frame}
 
@@ -888,48 +964,48 @@ VA-Count + YOLO-World & 19,03 & 131,55 \\
 
 \end{frame}
 
-% --- 3.4 SOTA Comparison ---
-\begin{frame}[shrink=5]{3.4. So sánh với các phương pháp tiêu biểu (SOTA)}
-\scriptsize
+% % --- 3.4 SOTA Comparison ---
+% \begin{frame}[shrink=5]{3.4. So sánh với các phương pháp tiêu biểu (SOTA)}
+% \scriptsize
 
-\centering
-\renewcommand{\arraystretch}{1.2}
-\resizebox{0.98\textwidth}{!}{%
-\begin{tabular}{|l|l|l|c|c|}
-\hline
-\rowcolor{uitblue!15}
-\textbf{Nhóm} & \textbf{Phương pháp} & \textbf{Venue} & \textbf{MAE}$\downarrow$ & \textbf{RMSE}$\downarrow$ \\
-\hline
-\textit{Ref-less}  & FamNet               & CVPR'21  & 32{,}27          & 131{,}46 \\
-                   & CounTR               & BMVC'22  & \textbf{14{,}71} & 106{,}87 \\
-                   & LOCA                 & ICCV'23  & 16{,}22          & 103{,}96 \\
-\hline
-\textit{Few-shot}  & CounTR               & BMVC'22  & 11{,}95          & 91{,}23  \\
-                   & LOCA                 & ICCV'23  & \textbf{10{,}97} & \textbf{56{,}97} \\
-\hline
-\textit{Zero-shot} & ZSC                  & CVPR'23  & 22{,}09          & 115{,}17 \\
-                   & VA-Count (gốc)       & ECCV'24  & 17{,}88          & 129{,}31 \\
-\rowcolor{green!8} & VA-Count (nhóm)      & {--}     & 17{,}99          & 129{,}39 \\
-\rowcolor{green!8} & \quad +Rich Prompt   & {--}     & \textbf{17{,}80} & 129{,}69 \\
-\rowcolor{green!8} & \quad +YOLO-World    & {--}     & 19{,}03          & 131{,}55 \\
-\rowcolor{green!8} & \quad +YOLO+RP       & {--}     & 17{,}91          & 130{,}98 \\
-\hline
-\end{tabular}
-}
+% \centering
+% \renewcommand{\arraystretch}{1.2}
+% \resizebox{0.98\textwidth}{!}{%
+% \begin{tabular}{|l|l|l|c|c|}
+% \hline
+% \rowcolor{uitblue!15}
+% \textbf{Nhóm} & \textbf{Phương pháp} & \textbf{Venue} & \textbf{MAE}$\downarrow$ & \textbf{RMSE}$\downarrow$ \\
+% \hline
+% \textit{Ref-less}  & FamNet               & CVPR'21  & 32{,}27          & 131{,}46 \\
+%                    & CounTR               & BMVC'22  & \textbf{14{,}71} & 106{,}87 \\
+%                    & LOCA                 & ICCV'23  & 16{,}22          & 103{,}96 \\
+% \hline
+% \textit{Few-shot}  & CounTR               & BMVC'22  & 11{,}95          & 91{,}23  \\
+%                    & LOCA                 & ICCV'23  & \textbf{10{,}97} & \textbf{56{,}97} \\
+% \hline
+% \textit{Zero-shot} & ZSC                  & CVPR'23  & 22{,}09          & 115{,}17 \\
+%                    & VA-Count (gốc)       & ECCV'24  & 17{,}88          & 129{,}31 \\
+% \rowcolor{green!8} & VA-Count (nhóm)      & {--}     & 17{,}99          & 129{,}39 \\
+% \rowcolor{green!8} & \quad +Rich Prompt   & {--}     & \textbf{17{,}80} & 129{,}69 \\
+% \rowcolor{green!8} & \quad +YOLO-World    & {--}     & 19{,}03          & 131{,}55 \\
+% \rowcolor{green!8} & \quad +YOLO+RP       & {--}     & 17{,}91          & 130{,}98 \\
+% \hline
+% \end{tabular}
+% }
 
-\vspace{0.3em}
+% \vspace{0.3em}
 
-\setbeamercolor{block title}{bg=blue!60!black, fg=white}
-\setbeamercolor{block body}{bg=blue!5!white}
-\begin{block}{\textbf{Nhận xét}}
-\begin{itemize}
-  \item Few-shot tốt nhất (LOCA, MAE $10{,}97$) hơn zero-shot $\approx 7$ điểm MAE -- giới hạn tự nhiên của zero-shot.
-  \item Hiện thực trung thực: MAE $17{,}99$ chỉ chênh $+0{,}11$ so với bài báo gốc ($17{,}88$).
-  \item Chênh lệch 4 cấu hình chỉ $1{,}23$ điểm MAE $\Rightarrow$ \textbf{bộ đếm (Counter)} là nhân tố quyết định.
-\end{itemize}
-\end{block}
+% \setbeamercolor{block title}{bg=blue!60!black, fg=white}
+% \setbeamercolor{block body}{bg=blue!5!white}
+% \begin{block}{\textbf{Nhận xét}}
+% \begin{itemize}
+%   \item Few-shot tốt nhất (LOCA, MAE $10{,}97$) hơn zero-shot $\approx 7$ điểm MAE -- giới hạn tự nhiên của zero-shot.
+%   \item Hiện thực trung thực: MAE $17{,}99$ chỉ chênh $+0{,}11$ so với bài báo gốc ($17{,}88$).
+%   \item Chênh lệch 4 cấu hình chỉ $1{,}23$ điểm MAE $\Rightarrow$ \textbf{bộ đếm (Counter)} là nhân tố quyết định.
+% \end{itemize}
+% \end{block}
 
-\end{frame}
+% \end{frame}
 
 % --- 3.4 Extraction Time ---
 \begin{frame}{3.4. Thời gian trích xuất mẫu}
@@ -1299,14 +1375,7 @@ Vật thể cấu trúc chia tách (cửa sổ nhiều ô) $\Rightarrow$ nhiều
 \end{block}
 \end{column}
 
-\begin{column}{0.32\textwidth}
-\setbeamercolor{block title}{bg=purple!70!black, fg=white}
-\setbeamercolor{block body}{bg=purple!5!white}
-\begin{block}{\textbf{Sai số phương pháp}}
-Mô hình dựa vào global features thay vì condition theo mẫu $\Rightarrow$ \textbf{training data bias}.\\[0.3em]
-Khi mẫu không hợp lệ, mô hình vẫn ước lượng nhưng sai lớn (GT=371, Pred$\approx$251).
-\end{block}
-\end{column}
+
 \end{columns}
 
 \end{frame}
@@ -1482,7 +1551,7 @@ VA-Count là thiết kế giàu thông tin học được, tách rõ giữa pha 
 \begin{itemize}\setlength{\itemsep}{1pt}
   \item Chất lượng đếm bị giới hạn bởi Counter (MAE-based) $\Rightarrow$ 4 cấu hình cùng kiến trúc Counter, chỉ khác EEM.
   \item Mật độ dày đặc ($>$500 obj/Mpx) $\Rightarrow$ MAE vượt 50; đối tượng phân mảnh $\Rightarrow$ đếm thừa.
-  \item Mô hình có xu hướng dựa vào đặc trưng toàn cục thay vì condition theo mẫu (training data bias).
+  
 \end{itemize}
 \end{block}
 
@@ -1501,7 +1570,7 @@ VA-Count là thiết kế giàu thông tin học được, tách rõ giữa pha 
 \begin{itemize}\setlength{\itemsep}{2pt}
   \item \textbf{Khử phân mảnh:} graph-based clustering, watershed hoặc head phụ dự đoán instance-aware density.
   \item \textbf{Mật độ dày đặc:} multi-resolution / tile-based inference để giữ chi tiết tại biên vật thể sát nhau.
-  \item \textbf{Khảo sát cài đặt:} CLIP ViT-B/32 vs L/14; Gemini 2.5 Flash khi có quota.
+    
 \end{itemize}
 \end{block}
 \end{column}
