@@ -115,3 +115,20 @@ Representative crops are stored under `docs/report/figures/failure_*.png`.
   and were not perturbed in this iteration. A handful of older `wandb` runs
   are missing summary entries (see Report §3.4) and so cannot be reproduced
   bit-for-bit from the artifacts in this repository.
+
+## 6. Val-split baseline numbers (server reproduction)
+
+Reproduced on server `counting@192.168.6.200` using the full FSC-147 dataset
+(6,147 images, `images_384_VarV2`). Val split = 1,286 images.
+Script: `scripts/run_evaluation_val.sh`. Raw logs: `experiments/server-val-baseline/`.
+
+| Config | Checkpoint | MAE ↓ | RMSE ↓ | NAE ↓ |
+|---|---|---|---|---|
+| baseline (GroundingDINO, raw prompt) | `checkpoint_FSC.pth` | 18.94 | 74.08 | 0.3384 |
+| dino_rich (GroundingDINO + Rich Prompt) | `checkpoint__finetuning_dino_prompt.pth` | 19.05 | 73.88 | 0.3318 |
+| yolo_norich (YOLO-World, no Rich Prompt) | `checkpoint__finetuning_yolo_noprompt.pth` | 20.29 | 75.20 | 0.3588 |
+| **yolo_rich (YOLO-World + Rich Prompt)** | `checkpoint__finetuning_yolo.pth` | **19.03** | **73.35** | **0.3352** |
+
+Note: these val-split numbers differ from the test-split numbers in §1 because
+the val split is a held-out portion of the training distribution. The test-split
+numbers (§1) are the primary benchmark figures for the paper.

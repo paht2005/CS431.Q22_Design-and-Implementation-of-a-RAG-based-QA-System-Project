@@ -9,7 +9,6 @@
 <h4 align="center">CS431.Q22 – Deep Learning and Applications</h4>
 <h4 align="center">Instructor: PhD. Nguyen Vinh Tiep</h4>
 
-
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.9+-blue?style=for-the-badge&logo=python&logoColor=white" />
   <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white" />
@@ -19,6 +18,7 @@
 </p>
 
 ---
+
 
 # **Project Overview**
 
@@ -64,7 +64,6 @@ ignored by `.gitignore` and therefore not stored in this repository:
 | 3   | 23520213   | Vu Viet Cuong    | Member | [Kun05-AI](https://github.com/Kun05-AI)                  | 23520213@gm.uit.edu.vn |
 
 
-
 > **About this project.** This repository is the team's own re-implementation
 > of the ECCV 2024 **VA-Count** paper, extended with two independent additions
 > from the literature: **Rich Prompts** (Zhu et al., 2025) for higher-quality
@@ -102,14 +101,14 @@ ignored by `.gitignore` and therefore not stored in this repository:
 ## **Repository Structure**
 
 ```text
-CS431.Q22-Project/
+cs338-zero-shot-object-counting-with-good-examplers/
 ├── README.md                 # Main project documentation (this file)
 ├── Makefile                  # Top-level build/run shortcuts (make help)
 ├── LICENSE                   # MIT License
 ├── requirements.txt          # Root-level Python dependencies
 ├── env.template              # Environment variable template (.env)
 │
-├── demo/                     # Demo section
+├── demo/                     # demo section
 |
 ├── code/                     # Main implementation
 │   ├── README.md
@@ -384,8 +383,8 @@ The project follows the report:
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/paht2005/CS431.Q22_Zero-shot-Object-Coutning-with-Good-Examplers.git
-cd CS431.Q22_Zero-shot-Object-Coutning-with-Good-Examplers
+git clone https://github.com/paht2005/CS338.Q21_Zero-shot-Object-Coutning-with-Good-Examplers.git
+cd CS338.Q21_Zero-shot-Object-Coutning-with-Good-Examplers
 ```
 
 2. **Create and activate a virtual environment (recommended)**
@@ -574,6 +573,8 @@ demo latency, failure-case taxonomy, dataset / checkpoint provenance) is in
 
 ## References
 
+## References
+
 - [1] H. Zhu, S. Li, J. Yuan, Z. Yang, Y. Guo, W. Liu, X. Zhong, and S. He,  
   “Expanding zero-shot object counting with rich prompts,”  
   arXiv preprint arXiv:2505.15398, 2025.  
@@ -590,7 +591,9 @@ demo latency, failure-case taxonomy, dataset / checkpoint provenance) is in
   “YOLO-World: Real-time open-vocabulary object detection,”  
   in *IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)*, 2024.  
   [Online]. Available: https://openaccess.thecvf.com/content/CVPR2024/papers/Cheng_YOLO-World_Real-Time_Open-Vocabulary_Object_Detection_CVPR_2024_paper.pdf
-  
+  “Yolo-world: Real-time open-vocabulary object detection,” 2024.  
+  [Online]. Available: https://arxiv.org/abs/2401.17270
+
 ---
 
 ## **Limitations & Future Work**
@@ -612,7 +615,7 @@ Future directions:
 
 ## **License**
 This project is developed for **academic purposes** under the course  
-**CS431.Q22 – Deep Learning and Applications** at the **University of Information Technology (UIT)**.
+**CS338.Q21 – Pattern Recognition** at the **University of Information Technology (UIT)**.
 
 Released under the **MIT License**.
 See the [LICENSE.txt](./LICENSE.txt) file for details.

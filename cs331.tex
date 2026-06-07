@@ -1,0 +1,1715 @@
+\documentclass[11pt]{beamer}
+\usetheme{Frankfurt}
+\usefonttheme{serif}
+
+% --- Vietnamese ---
+\usepackage{fontspec}
+\setmainfont{texgyretermes}[
+    Extension      = .otf,
+    UprightFont    = *-regular,
+    BoldFont       = *-bold,
+    ItalicFont     = *-italic,
+    BoldItalicFont = *-bolditalic
+]
+\usepackage{polyglossia}
+\setdefaultlanguage{vietnamese}
+
+% --- Packages ---
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{positioning}
+\setbeamerfont{caption}{size=\tiny}
+\setbeamertemplate{caption}[numbered]
+\usepackage{amsmath,amssymb,graphicx,booktabs}
+\usepackage{hyperref}
+\usepackage[table]{xcolor}
+\hypersetup{colorlinks=true,urlcolor=blue}
+\usepackage{listings}
+\usepackage{multicol}
+\usepackage{caption}
+
+\lstdefinestyle{codestyle}{
+  basicstyle=\ttfamily\scriptsize,
+  columns=fullflexible,
+  frame=single,
+  rulecolor=\color{black!25},
+  backgroundcolor=\color{blue!3},
+  showstringspaces=false,
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=2,
+  numbers=left,
+  numberstyle=\tiny\color{black!45},
+  keywordstyle=\bfseries\color{blue!70!black},
+  commentstyle=\itshape\color{green!45!black},
+  stringstyle=\color{orange!70!black},
+}
+
+\lstdefinestyle{bashstyle}{
+  backgroundcolor=\color{blue!3},
+  basicstyle=\ttfamily\tiny,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  frame=single,
+  rulecolor=\color{black!25},
+  framesep=3pt,
+  xleftmargin=3pt,
+  xrightmargin=3pt,
+}
+
+% --- Main colors ---
+\definecolor{uitblue}{RGB}{0,70,140}
+\setbeamercolor{structure}{fg=uitblue}
+\setbeamercolor{frametitle}{fg=white,bg=uitblue}
+\setbeamercolor{block title}{bg=uitblue!80,fg=white}
+\setbeamercolor{block body}{bg=blue!5,fg=black}
+
+% --- Title ---
+\title[Zero-shot Counting]{\textbf{Đếm đối tượng Zero-shot với mẫu chất lượng \\ (Zero-shot Object Counting with Good Exemplars)}}
+
+\author[CS431.Q22]{Nhóm  \\ Nguyễn Công Phát, Nguyễn Lê Phong, Vũ Việt Cương \\23521143, \and 23521168, \and 23520213}
+\institute[UIT]{Trường Đại học Công nghệ Thông tin -- ĐHQG TP.HCM}
+\date{GVHD: TS. Mai Tiến Dũng}
+   
+% --- Figure path ---
+\graphicspath{{figures/}{../report/figures/}}
+
+% --- Footer ---
+\setbeamertemplate{footline}{
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.2ex,dp=1ex,center]{author in head/foot}%
+      TS. Mai tiến Dũng
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.34\paperwidth,ht=2.2ex,dp=1ex,center]{title in head/foot}%
+      CS331.Q21 -- Thị giác Máy tính nâng cao
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.2ex,dp=1ex,center]{date in head/foot}%
+      \today  \hspace{1em} \insertframenumber{} / \inserttotalframenumber
+    \end{beamercolorbox}%
+  }%
+  \vskip0pt%
+}
+
+% --- Show outline before each section ---
+\AtBeginSection[]{
+  \begin{frame}{Mục lục}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+\begin{document}
+
+% ==================== TITLE ====================
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% ==================== OUTLINE ====================
+\begin{frame}{Mục lục}
+  \tableofcontents
+\end{frame}
+
+%==================================================================
+%                    SECTION 1: TỔNG QUAN
+%==================================================================
+\section{Tổng quan đề tài}
+
+% --- 1.1 Mô tả bài toán ---
+\begin{frame}{1.1. Mô tả bài toán}
+\scriptsize
+
+\setbeamercolor{block title}{bg=uitblue!80,fg=white}
+\setbeamercolor{block body}{bg=blue!5,fg=black}
+\begin{block}{Định nghĩa}
+\textbf{Object Counting} -- ước lượng số lượng đối tượng thuộc một lớp cho trước trong ảnh tự nhiên.\\[0.3em]
+\textbf{Zero-shot Counting} -- chỉ cần ảnh + text prompt (tên lớp), \emph{không cần mẫu hình ảnh thủ công}. Hệ thống tự động sinh mẫu (exemplar) và tạo bản đồ mật độ (density map) để đếm.
+\end{block}
+
+\setbeamercolor{block title}{bg=green!70!black,fg=white}
+\setbeamercolor{block body}{bg=green!5,fg=black}
+\begin{block}{Ví dụ}
+Ảnh chứa nhiều quả cam $+$ prompt \texttt{"oranges"} $\Rightarrow$ hệ thống trả về density map + tổng số cam.
+\end{block}
+
+\setbeamercolor{block title}{bg=orange!80!black,fg=white}
+\setbeamercolor{block body}{bg=orange!10,fg=black}
+\begin{block}{Ứng dụng}
+\begin{itemize}
+  \item Nông nghiệp thông minh (đếm quả, cây trồng).
+  \item Giám sát giao thông, kiểm kê kho hàng.
+  \item Phân tích hình ảnh y tế, phân tích đám đông.
+\end{itemize}
+\end{block}
+
+\setbeamercolor{block title}{bg=red!80!black,fg=white}
+\setbeamercolor{block body}{bg=red!10,fg=black}
+\begin{block}{Thách thức}
+\begin{itemize}
+  \item Biến thiên lớn về mật độ và kích thước đối tượng.
+  \item Đối tượng nhỏ, sát nhau $\Rightarrow$ khó tách ranh giới.
+  \item Nền phức tạp, đối tượng tương tự $\Rightarrow$ nhầm lẫn tiền cảnh/nền.
+\end{itemize}
+\end{block}
+
+\end{frame}
+
+% --- 1.2 Lý do chọn đề tài ---
+\begin{frame}{1.2. Lý do chọn đề tài}
+\scriptsize
+
+\begin{block}{Bối cảnh}
+\begin{itemize}
+  \item Nhu cầu tự động hóa phân tích hình ảnh ngày càng lớn.
+  \item Các phương pháp hiện tại: phụ thuộc nhãn thủ công, hạn chế miền đối tượng, tính thủ công của few-shot.
+\end{itemize}
+\end{block}
+
+\vspace{0.2cm}
+
+\centering
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\rowcolors{2}{blue!3!white}{white}
+\resizebox{0.98\textwidth}{!}{%
+\begin{tabular}{|p{2.5cm}|p{5cm}|p{4cm}|}
+\hline
+\rowcolor{uitblue!90!black}
+\textcolor{white}{\textbf{Tiếp cận}} &
+\textcolor{white}{\textbf{Mô tả}} &
+\textcolor{white}{\textbf{Hạn chế}} \\
+\hline
+\textbf{Class-specific} & Chỉ đếm lớp đã huấn luyện & Không mở rộng được sang lớp mới \\
+\hline
+\textbf{Few-shot} & Cần vài mẫu hình ảnh từ người dùng & Thủ công, không tự động hóa \\
+\hline
+\textbf{Zero-shot} & Chỉ cần text prompt & Thách thức về chất lượng mẫu tự sinh \\
+\hline
+\end{tabular}
+}
+
+\vspace{0.3cm}
+
+\begin{block}{Mục tiêu đồ án}
+\begin{itemize}
+  \item \textbf{Tự động hóa} quy trình lấy mẫu: loại bỏ can thiệp thủ công.
+  \item \textbf{Xây dựng} tương tác đa phương thức (text prompt $\leftrightarrow$ đặc trưng ảnh).
+  \item \textbf{Tối ưu hóa} khả năng tổng quát hóa trên lớp đối tượng mới.
+\end{itemize}
+\end{block}
+
+\end{frame}
+
+% --- 1.3 Phát biểu bài toán ---
+\begin{frame}{1.3. Phát biểu bài toán}
+\scriptsize
+
+\setbeamercolor{block title}{bg=uitblue!80,fg=white}
+\setbeamercolor{block body}{bg=blue!5,fg=black}
+\begin{block}{Input}
+\begin{itemize}
+    \item Ảnh màu RGB $I \in \mathbb{R}^{H \times W \times 3}$.
+    \item Text prompt $T$ -- tên lớp tiếng Anh (ví dụ: \texttt{"oranges"}, \texttt{"keyboard keys"}).
+    \item Bộ dữ liệu chuẩn FSC-147 (6\,135 ảnh, 147 lớp).
+\end{itemize}
+\end{block}
+
+\begin{block}{Output}
+\begin{itemize}
+    \item Bản đồ mật độ (density map) $D \in \mathbb{R}^{H \times W}$.
+    \item Tổng số lượng đối tượng $\hat{y} = \int_{H,W} D \, dx\, dy$.
+\end{itemize}
+\end{block}
+
+\setbeamercolor{block title}{bg=orange!80!black,fg=white}
+\setbeamercolor{block body}{bg=orange!10,fg=black}
+\begin{block}{Ràng buộc}
+\begin{itemize}
+    \item \textbf{Dữ liệu ảnh:} ảnh RGB, mật độ rất biến thiên; mỗi lần thực thi chỉ đếm \emph{một lớp} đối tượng.
+    \item \textbf{Câu lệnh:} bằng tiếng Anh; mô tả vật thể hữu hình quan sát được; không sử dụng khái niệm trừu tượng (\texttt{traffic}, \texttt{meeting}) hay danh từ không đếm được (\texttt{water}, \texttt{smoke}).
+\end{itemize}
+\end{block}
+
+\vspace{0.3em}
+\centering
+\resizebox{0.85\textwidth}{!}{%
+\begin{tikzpicture}[
+    node distance=1.8cm,
+    every node/.style={font=\small},
+    box/.style={draw, rounded corners, fill=white, inner sep=5pt},
+]
+\node[box] (input) {Ảnh RGB + Text prompt \texttt{"oranges"}};
+\node[box, right=2.5cm of input] (model) {\textbf{VA-Count System}};
+\node[box, right=2.5cm of model] (output) {Density Map + Count $\hat{y}$};
+\draw[->, thick] (input) -- (model);
+\draw[->, thick] (model) -- (output);
+\end{tikzpicture}%
+}
+    \end{frame}
+
+% --- 1.4 Lý do chọn VA-Count ---
+\begin{frame}[shrink=10]{1.4. Lý do chọn VA-Count làm baseline}
+\scriptsize
+
+\setbeamercolor{block title}{bg=blue!60!black, fg=white}
+\setbeamercolor{block body}{bg=blue!5!white}
+\begin{block}{\textbf{Ba lý do chính}}
+\begin{enumerate}
+  \item \textbf{Cơ chế tự sinh mẫu (exemplar) hoàn toàn tự động.}\\
+  Dùng GroundingDINO phát hiện sơ bộ $\Rightarrow$ không cần bounding box thủ công.
+  \item \textbf{Kiến trúc hai luồng đối lập (contrastive dual-process).}\\
+  Luồng Dương (Positive Process) + Luồng Âm (Negative Process) $\Rightarrow$ phân biệt tiền cảnh/nền hiệu quả.
+  \item \textbf{Thiết kế module hóa, dễ mở rộng.}\\
+  Tách biệt EEM (lấy mẫu) và NSM (sinh density map) $\Rightarrow$ thay thế từng thành phần dễ dàng.
+\end{enumerate}
+\end{block}
+
+\vspace{0.3em}
+\begin{center}
+  \includegraphics[width=0.85\textwidth]{vis_strawberry_posneq.jpg}
+  \captionof{figure}{Minh họa VA-Count: positive exemplars (xanh lá) và negative exemplars (đỏ).}
+\end{center}
+
+\end{frame}
+
+% --- 1.5 Đóng góp ---
+\begin{frame}{1.5. Đóng góp của đồ án}
+\scriptsize
+
+\begin{block}{Các đóng góp chính}
+\begin{enumerate}
+  \item \textbf{Hiện thực hệ thống VA-Count cơ sở} -- EEM (GroundingDINO) + NSM (contrastive loss).
+  \item \textbf{Tích hợp Rich Prompts} -- Gemini 2.5 Flash sinh mô tả chi tiết + CLIP ViT-B/32 re-rank.
+  \item \textbf{Tích hợp YOLO-World} thay GroundingDINO -- nhanh hơn đáng kể.
+  \item \textbf{Đánh giá đầy đủ trên FSC-147} -- 4 cấu hình: baseline, +Rich Prompt, +YOLO-World, +YOLO+RP.
+  \item \textbf{Phân tích hiện tượng bão hòa ngữ nghĩa} -- GroundingDINO gần ngưỡng bão hòa, YOLO-World hưởng lợi nhiều từ Rich Prompt ($\Delta$MAE $=1{,}12$ vs $0{,}19$).
+\end{enumerate}
+\end{block}
+
+\end{frame}
+
+%==================================================================
+%                    SECTION 2: PHƯƠNG PHÁP
+%==================================================================
+\section{Phương pháp thực hiện}
+
+% --- 2.1 Kiến trúc tổng quan ---
+\begin{frame}[shrink=5]{2.1. Kiến trúc tổng quan VA-Count}
+\scriptsize
+
+\begin{center}
+  \includegraphics[width=\textwidth]{system_overview.png}
+  \captionof{figure}{Tổng quan kiến trúc VA-Count: hai luồng positive/negative qua EEM và NSM.}
+\end{center}
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.48\textwidth}
+
+\setbeamercolor{block title}{bg=blue!60!black, fg=white}
+\setbeamercolor{block body}{bg=blue!5!white}
+\begin{block}{\textbf{Hai luồng xử lý}}
+\begin{itemize}
+  \item \textbf{Luồng Dương:} tìm mẫu dương $\Rightarrow$ density map $D_p$ tập trung vào đối tượng cần đếm.
+  \item \textbf{Luồng Âm:} tìm mẫu âm $\Rightarrow$ density map $D_n$ tập trung vào nhiễu nền.
+\end{itemize}
+\end{block}
+
+
+\end{column}
+
+\begin{column}{0.48\textwidth}
+
+\setbeamercolor{block title}{bg=teal!70!black, fg=white}
+\setbeamercolor{block body}{bg=teal!5!white}
+\begin{block}{\textbf{Hai module chính}}
+\begin{enumerate}
+  \item \textbf{EEM} (Exemplar Enhancement Module): tự động phát hiện \& tinh chỉnh mẫu.
+  \item \textbf{NSM} (Noise Suppression Module \& Counter): sinh density map + khử nhiễu.
+\end{enumerate}
+\end{block}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% --- 2.1 (tiếp) EEM ---
+\begin{frame}[shrink=10]{2.1. Exemplar Enhancement Module -- EEM (tt.)}
+\scriptsize
+
+\setbeamercolor{block title}{bg=orange!80!black, fg=white}
+\setbeamercolor{block body}{bg=orange!6!white}
+\begin{block}{\textbf{Mục tiêu}}
+Tự động phát hiện và tinh chỉnh các mẫu (exemplars) từ ảnh đầu vào, loại bỏ hoàn toàn sự can thiệp thủ công trong khâu chọn mẫu.
+\end{block}
+
+\vspace{0.3em}
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.48\textwidth}
+
+\setbeamercolor{block title}{bg=blue!60!black, fg=white}
+\setbeamercolor{block body}{bg=blue!5!white}
+\begin{block}{\textbf{Bước 1: Khởi tạo mẫu (GroundingDINO)}}
+\begin{itemize}
+  \item \textbf{Luồng Dương:} ảnh + tên lớp (vd. \texttt{single dog .}) $\Rightarrow$ bbox ứng viên dương.
+  \item \textbf{Luồng Âm:} ảnh + prompt chung (\texttt{object .}) $\Rightarrow$ tất cả vật thể (gồm cả mục tiêu và nhiễu).
+\end{itemize}
+\end{block}
+
+\setbeamercolor{block title}{bg=teal!70!black, fg=white}
+\setbeamercolor{block body}{bg=teal!5!white}
+\begin{block}{\textbf{Bước 3: Chọn top-$k$ mẫu}}
+\begin{itemize}
+  \item Mặc định: \textbf{top-3} mỗi luồng theo confidence score của GroundingDINO.
+  \item Rich Prompt mở rộng lên \textbf{top-5} cho luồng Dương.
+\end{itemize}
+\end{block}
+
+\end{column}
+
+\begin{column}{0.48\textwidth}
+
+\setbeamercolor{block title}{bg=green!70!black, fg=white}
+\setbeamercolor{block body}{bg=green!5!white}
+\begin{block}{\textbf{Bước 2: Tinh chỉnh \& lọc}}
+\textbf{Loại trùng lặp (Deduplication -- chỉ luồng Âm):}
+\begin{itemize}
+  \item So sánh box âm với box dương: IoU cao $\Rightarrow$ loại bỏ.
+  \item Đảm bảo mẫu âm không trùng mẫu dương.
+\end{itemize}
+
+\vspace{0.3em}
+\textbf{Bộ lọc đơn đối tượng (Single-Object Filter):}
+\begin{itemize}
+  \item Đảm bảo mẫu chỉ chứa duy nhất một đối tượng.
+  \item Thực hiện qua bộ phân loại nhị phân (Binary Classifier).
+  \item Áp dụng cho \emph{cả hai luồng} dương và âm.
+\end{itemize}
+\end{block}
+
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% --- 2.1 (tiếp) NSM ---
+\begin{frame}[shrink=15]{2.1. Noise Suppression Module \& Counter -- NSM (tt.)}
+\scriptsize
+
+\setbeamercolor{block title}{bg=violet!75!black, fg=white}
+\setbeamercolor{block body}{bg=violet!5!white}
+\begin{block}{\textbf{Mục tiêu}}
+Tối đa hóa sự tương đồng $D_p \leftrightarrow D_g$, giảm thiểu $D_n \leftrightarrow D_g$. Nhờ vậy, NSM giúp hệ thống học được ``cái gì là đối tượng'' \emph{và} ``cái gì không phải là đối tượng''.
+\end{block}
+
+\vspace{0.3em}
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.48\textwidth}
+
+\setbeamercolor{block title}{bg=blue!60!black, fg=white}
+\setbeamercolor{block body}{bg=blue!5!white}
+\begin{block}{\textbf{Pha 1: Tương tác đặc trưng \& sinh density map}}
+Counter gồm: \textit{Image Encoder}, \textit{Interaction Module}, \textit{Decoder}.
+\begin{itemize}
+  \item Feature ảnh = \textit{Query}.
+  \item Phép chiếu tuyến tính feature mẫu ($E_p$, $E_n$) = \textit{Key/Value}.
+  \item Attention + Decoder $\Rightarrow$ hai bản đồ mật độ:
+\end{itemize}
+\vspace{-0.3em}
+\[
+D_p = \Gamma_{\text{decode}}(F^p_{\text{fuse}}), \quad
+D_n = \Gamma_{\text{decode}}(F^n_{\text{fuse}})
+\]
+\end{block}
+
+\end{column}
+
+\begin{column}{0.48\textwidth}
+
+\setbeamercolor{block title}{bg=red!70!black, fg=white}
+\setbeamercolor{block body}{bg=red!5!white}
+\begin{block}{\textbf{Pha 2: Hàm mất mát (Loss)}}
+\begin{itemize}\setlength{\itemsep}{2pt}
+  \item \textbf{Contrastive Loss ($\mathcal{L}_C$)} -- dạng Softmax, tăng xác suất luồng Dương, giảm luồng Âm:
+  \vspace{-0.4em}
+  \[
+  \mathcal{L}_C = -\log \frac{\exp(\mu(D_p, D_g))}{\exp(\mu(D_p,D_g))+\exp(\mu(D_n,D_g))}
+  \]
+  \item \textbf{Density Loss ($\mathcal{L}_D$)} -- MSE đảm bảo độ chính xác bản đồ mật độ:
+  \vspace{-0.4em}
+  \[
+  \mathcal{L}_D = \tfrac{1}{HW}\!\sum_{i,j}(D^{(i,j)}_p - D^{(i,j)}_g)^2
+  \]
+  \item \textbf{Tổng hàm mất mát:}
+  $\mathcal{L}_{\text{total}} = \mathcal{L}_C + \mathcal{L}_D$
+\end{itemize}
+\end{block}
+
+\end{column}
+\end{columns}
+
+\vspace{0.3em}
+
+\setbeamercolor{block title}{bg=purple!70!black, fg=white}
+\setbeamercolor{block body}{bg=purple!5!white}
+\begin{block}{\textbf{Ý nghĩa}}
+$\mathcal{L}_C$ ép $D_p$ luôn gần $D_g$ hơn $D_n$. $\mathcal{L}_D$ đảm bảo bản đồ mật độ dương khớp ground truth. Kết hợp cả hai: hệ thống vừa đếm đúng vừa loại nhiễu.
+\end{block}
+
+\end{frame}
+
+
+
+% --- 2.2 Rich Prompts ---
+\begin{frame}[fragile, shrink=15]{2.2. Cải tiến với Rich Prompts - Module Enhanced Prompt}
+\scriptsize
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.52\textwidth}
+
+\setbeamercolor{block title}{bg=blue!60!black, fg=white}
+\setbeamercolor{block body}{bg=blue!5!white}
+\begin{block}{\textbf{Động lực}}
+\begin{itemize}
+  \item Tên lớp đơn giản $\Rightarrow$ nhập nhằng ngữ nghĩa (\texttt{"key"} = phím / chìa khóa?).
+  \item Thiếu thông tin phân biệt tiền cảnh/nền khi nền phức tạp.
+\end{itemize}
+\end{block}
+
+\setbeamercolor{block title}{bg=green!70!black, fg=white}
+\setbeamercolor{block body}{bg=green!5!white}
+\begin{block}{\textbf{Giải pháp: Gemini 2.5 Flash}}
+\begin{itemize}
+  \item \textbf{Positive Prompt:} mô tả đặc trưng thị giác cốt lõi (shape, color, material).
+  \item \textbf{Negative Prompt:} mô tả nền, vật thể gây nhiễu.
+  \item \textbf{CLIP ViT-B/32 Re-ranking:} lọc ngữ nghĩa cấp hai, đảm bảo patch khớp tên lớp gốc.
+  \item Top-3 $\to$ \textbf{Top-5} mẫu dương.
+\end{itemize}
+\end{block}
+
+\end{column}
+
+\begin{column}{0.45\textwidth}
+\begin{center}
+  \includegraphics[width=\textwidth]{enhanced_prompt_flow.png}
+  \captionof{figure}{Pipeline Enhanced Prompt: Image + ClassName $\to$ Gemini $\to$ enhanced prompts.}
+\end{center}
+
+\vspace{0.3em}
+
+\begin{center}
+  \includegraphics[width=\textwidth]{positive_keyboard.png}
+  \captionof{figure}{Ví dụ: top-3 positive boxes cho \texttt{keyboard keys} sau CLIP re-rank.}
+\end{center}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% --- 2.2 (tiếp) Rich Prompts - Prompt Templates ---
+\begin{frame}[fragile, shrink=5]{2.2. Cải tiến với Rich Prompts -- Mẫu Prompt (tt.)}
+\scriptsize
+
+Chi tiết các prompt mẫu được thiết kế để định hướng mô hình tập trung vào
+đặc trưng thị giác cốt lõi:
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.48\textwidth}
+\begin{lstlisting}[style=bashstyle,caption={Positive Prompt},label=lst:pos_prompt]
+Look at the image and provide the
+visual definition of a single
+'{class_name}'.
+
+Task: Describe the intrinsic physical
+appearance of just ONE instance, as if
+it were isolated.
+
+STRICT RULES:
+1. Subject: Describe ONE item only.
+   Ignore background or other items.
+2. Format: Start with
+   'single {singular_name}'.
+   Use dot-separated phrases.
+3. Content: Focus on Shape, Color,
+   Material.
+
+Example for 'keyboard key':
+BAD:  keyboard key . rows of buttons .
+GOOD: single keyboard key .
+      square shape . black plastic .
+
+Your output for '{singular_name}':
+\end{lstlisting}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{lstlisting}[style=bashstyle,caption={Negative Prompt},label=lst:neg_prompt]
+Analyze the image and identify visual
+elements that are NOT '{class_name}'.
+
+Describe background, environment, and
+potential distractors.
+
+Focus strictly on:
+1. Background materials.
+2. Environmental conditions.
+3. Other objects that are NOT
+   '{class_name}'.
+
+Output format rules:
+- Do NOT describe '{class_name}'.
+- Separate phrases with ' . '.
+- Do NOT write full sentences.
+- End with a dot.
+
+Example input: Image of a cat on sofa.
+Example output: beige sofa texture .
+  blurry living room . shadows .
+  fabric patterns .
+
+Your output for this image:
+\end{lstlisting}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+
+
+% --- 2.2 (tiếp) Rich Prompts - Architecture ---
+\begin{frame}{2.2. Cải tiến với Rich Prompts -- Kiến trúc (tt.)}
+\scriptsize
+
+\begin{center}
+  \includegraphics[width=0.9\textwidth]{system_richprompt.png}
+  \captionof{figure}{Kiến trúc sau tích hợp Rich Prompt: Gemini sinh prompt $\to$ GroundingDINO $\to$ CLIP ViT-B/32 re-rank $\to$ NSM.}
+\end{center}
+
+
+\end{frame}
+
+% --- 2.2 (tiếp) Rich Prompts - Architecture ---
+\begin{frame}{2.2. Cải tiến với Rich Prompts -- Kiến trúc (tt.)}
+\scriptsize
+
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\setbeamercolor{block title}{bg=teal!70!black, fg=white}
+\setbeamercolor{block body}{bg=teal!5!white}
+\begin{block}{\textbf{Luồng Dương}}
+\begin{itemize}
+  \item Enhanced positive prompt $\to$ GroundingDINO.
+  \item CLIP ViT-B/32 re-rank theo tên lớp gốc.
+  \item Chọn top-5 patch điểm CLIP cao nhất.
+\end{itemize}
+\end{block}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\setbeamercolor{block title}{bg=red!70!black, fg=white}
+\setbeamercolor{block body}{bg=red!5!white}
+\begin{block}{\textbf{Luồng Âm}}
+\begin{itemize}
+  \item Enhanced negative prompt $\to$ GroundingDINO.
+  \item Deduplication theo \emph{tên lớp gốc} (không dùng enhanced prompt).
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+
+\vspace{0.3em}
+
+\setbeamercolor{block title}{bg=purple!70!black, fg=white}
+\setbeamercolor{block body}{bg=purple!5!white}
+\begin{block}{\textbf{Lý giải lựa chọn kỹ thuật}}
+\begin{itemize}
+  \item \textbf{CLIP Re-ranking cần thiết:} enhanced prompt khiến GroundingDINO ``nhạy'' hơn, trích xuất cả vật thể không phải mục tiêu. CLIP đóng vai trò bộ lọc ngữ nghĩa cấp hai.
+  \item \textbf{Dedup theo tên lớp gốc:} nếu dùng enhanced prompt cho NMS, nhiều hộp nền cần thiết cho luồng Âm bị loại nhầm.
+  \item \textbf{Top-3 $\to$ Top-5:} enhanced prompt sinh nhiều ứng viên chất lượng hơn $\Rightarrow$ mở rộng $k$ để tận dụng.
+\end{itemize}
+\end{block}
+
+\end{frame}
+
+% --- 2.3 YOLO-World ---
+\begin{frame}[fragile, shrink = 5]{2.3. Cải tiến với YOLO-World}
+\scriptsize
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.52\textwidth}
+
+\setbeamercolor{block title}{bg=red!70!black, fg=white}
+\setbeamercolor{block body}{bg=red!5!white}
+\begin{block}{\textbf{Vấn đề: GroundingDINO là bottleneck}}
+\begin{itemize}
+  \item Chiếm $\sim$80\% thời gian xử lý mỗi ảnh.
+
+  \item \textbf{Prompt unfaithful:} phát hiện đối tượng bất kể prompt có đúng hay không (xem ví dụ tiếp theo).
+\end{itemize}
+\end{block}
+
+\setbeamercolor{block title}{bg=teal!70!black, fg=white}
+\setbeamercolor{block body}{bg=teal!5!white}
+\begin{block}{\textbf{YOLO-World: Prompt-then-Detect}}
+\begin{itemize}
+  \item Mã hóa \textbf{ngoại tuyến} text prompt thành tham số mô hình.
+  \item Suy luận \textbf{không cần} gọi lại bộ mã hóa ngôn ngữ.
+  
+  \item Nhanh hơn GroundingDINO $\sim$20$\times$ (50--80 FPS vs $<$5 FPS).
+\end{itemize}
+\end{block}
+
+\end{column}
+
+\begin{column}{0.45\textwidth}
+\begin{center}
+  \includegraphics[width=\textwidth]{yolo_speed_curve.png}
+  \captionof{figure}{Speed-Accuracy: YOLO-World vs GroundingDINO/GLIP trên LVIS minival.}
+\end{center}
+
+\end{column}
+\end{columns}
+
+\end{frame}
+
+
+% --- 2.3 Prompt Faithfulness: GDino unfaithful ---
+\begin{frame}{2.3. Giới hạn: GroundingDINO không trung thực với Prompt}
+\scriptsize
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.24\textwidth}
+\begin{center}
+  \includegraphics[width=\textwidth]{sample_bird.jpg}
+  \captionof{figure}{Ảnh đầu vào chứa chim hồng hạc.}
+\end{center}
+\end{column}
+\begin{column}{0.37\textwidth}
+\begin{center}
+  \includegraphics[width=\textwidth]{sample_bird_GroundingDINO_prompt-lion.png}
+  \captionof{figure}{GDino: nhập prompt \texttt{"lion"}.}
+\end{center}
+\end{column}
+\begin{column}{0.37\textwidth}
+\begin{center}
+  \includegraphics[width=\textwidth]{sample_bird_GroundingDINO_prompt-lion_count.png}
+  \captionof{figure}{Kết quả: Count $= 14$ {\color{red}$\times$} (sai!).}
+\end{center}
+\end{column}
+\end{columns}
+
+\vspace{0.4em}
+\setbeamercolor{block title}{bg=red!70!black, fg=white}
+\setbeamercolor{block body}{bg=red!5!white}
+\begin{block}{\textbf{GroundingDINO: Prompt Unfaithful}}
+  Cross-modal fusion cho phép mô hình \textbf{bỏ qua ngữ nghĩa prompt} --- nhập \texttt{"lion"} trên ảnh chứa hồng hạc, vẫn phát hiện và đếm được 14 đối tượng.
+\end{block}
+
+\end{frame}
+
+
+% --- 2.3 Prompt Faithfulness: YOLO faithful ---
+\begin{frame}[fragile, shrink=10]{2.3. YOLO-World: Trung thực với Prompt}
+\scriptsize
+
+\begin{columns}[T,onlytextwidth]
+% Left: YOLO + lion
+\begin{column}{0.48\textwidth}
+  \begin{center}
+    \includegraphics[width=0.75\textwidth]{sample_bird_YoloWorld_prompt-lion.png}
+    \captionof{figure}{YOLO: nhập prompt \texttt{"lion"}.}
+  \end{center}
+  \begin{center}
+    \includegraphics[width=0.75\textwidth]{sample_bird_YoloWorld_prompt-lion_no-count.png}
+    \captionof{figure}{Kết quả: 0 detections {\color{green!60!black}$\checkmark$}.}
+  \end{center}
+\end{column}
+% Right: YOLO + bird
+\begin{column}{0.48\textwidth}
+  \begin{center}
+    \includegraphics[width=0.75\textwidth]{sample_bird_YoloWorld_prompt-bird.png}
+    \captionof{figure}{YOLO: nhập prompt \texttt{"bird"}.}
+  \end{center}
+  \begin{center}
+    \includegraphics[width=0.75\textwidth]{sample_bird_YoloWorld_prompt-bird_count.png}
+    \captionof{figure}{Kết quả: Count $= 14$ {\color{green!60!black}$\checkmark$}.}
+  \end{center}
+\end{column}
+\end{columns}
+
+\vspace{0.2em}
+\setbeamercolor{block title}{bg=teal!70!black, fg=white}
+\setbeamercolor{block body}{bg=teal!5!white}
+\begin{block}{\textbf{YOLO-World: Prompt Faithful}}
+  CLIP cosine similarity đảm bảo chỉ detect khi prompt khớp ngữ nghĩa --- \texttt{"lion"} $\to$ 0 detections; \texttt{"bird"} $\to$ Count $= 14$.
+\end{block}
+
+\end{frame}
+
+
+% --- 2.3 YOLO-World ---
+\begin{frame}{2.3. Cải tiến với YOLO-World (tt.)}
+\scriptsize
+
+
+
+\begin{center}
+  \includegraphics[width=\textwidth]{system_yolo.png}
+  \captionof{figure}{Kiến trúc VA-Count với YOLO-World thay GroundingDINO.}
+\end{center}
+
+
+\end{frame}
+%==================================================================
+%                    SECTION 3: THỰC NGHIỆM
+%==================================================================
+\section{Thực nghiệm và kết quả}
+
+% --- 3.1 Dataset ---
+\begin{frame}[shrink=5]{3.1. Bộ dữ liệu FSC-147}
+\scriptsize
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.48\textwidth}
+
+\setbeamercolor{block title}{bg=uitblue!80,fg=white}
+\setbeamercolor{block body}{bg=blue!5,fg=black}
+\begin{block}{\textbf{Thông tin FSC-147}}
+\begin{itemize}
+  \item \textbf{6\,135 ảnh}, \textbf{147 lớp đối tượng}.
+  \item Chú thích điểm (dot annotation).
+  \item Chia 6:2:2 (train:val:test) không chồng lấn theo lớp.
+  \item Biến thiên lớn: mật độ, kích thước, bối cảnh.
+  \item Nhãn lớp + dot annotation cho phép đánh giá zero-shot thông qua text prompt.
+\end{itemize}
+\end{block}
+
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{center}
+  \includegraphics[width=\textwidth]{fsc147_samples.png}
+  \captionof{figure}{Một số ảnh minh họa từ FSC-147.}
+\end{center}
+
+\vspace{0.3em}
+
+\begin{center}
+  \includegraphics[width=\textwidth]{vis_good_prediction.png}
+  \captionof{figure}{Kết quả tốt: \texttt{4910.jpg} (chocolates), GT=14, Pred=14.40.}
+\end{center}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% --- 3.1 (tiếp) Data Preprocessing ---
+\begin{frame}{3.1. Tiền xử lý dữ liệu (tt.)}
+\scriptsize
+
+% Pipeline ngang ở trên
+\centering
+\resizebox{0.95\textwidth}{!}{%
+\begin{tikzpicture}[
+    node distance=0.5cm,
+    every node/.style={font=\scriptsize},
+    box/.style={draw, rounded corners, fill=blue!5, inner sep=5pt, align=center, minimum height=0.7cm},
+    arr/.style={->, thick},
+]
+\node[box] (raw)    {Ảnh gốc\\+ Annotation};
+\node[box, right=of raw]   (resize) {Resize \&\\Normalize};
+\node[box, right=of resize](aug)    {Augmentation\\(train only)};
+\node[box, right=of aug]   (crop)   {Exemplar\\Crops};
+\draw[arr] (raw) -- (resize);
+\draw[arr] (resize) -- (aug);
+\draw[arr] (aug) -- (crop);
+\end{tikzpicture}%
+}
+
+\vspace{0.3em}
+\raggedright
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.32\textwidth}
+\setbeamercolor{block title}{bg=teal!70!black, fg=white}
+\setbeamercolor{block body}{bg=teal!5!white}
+\begin{block}{\textbf{Chuẩn hóa ảnh}}
+\begin{itemize}\setlength{\itemsep}{1pt}
+  \item Resize về bội 16, tối đa \textbf{384$\times$384 px}.
+  \item Normalize ImageNet:\\$\mu{=}[0.485, 0.456, 0.406]$\\$\sigma{=}[0.229, 0.224, 0.225]$.
+  \item Đồng bộ density map GT.
+\end{itemize}
+\end{block}
+\end{column}
+
+\begin{column}{0.32\textwidth}
+\setbeamercolor{block title}{bg=orange!80!black, fg=white}
+\setbeamercolor{block body}{bg=orange!6!white}
+\begin{block}{\textbf{Data Augmentation}}
+\begin{itemize}\setlength{\itemsep}{1pt}
+  \item Random flip + crop (\texttt{imgaug}). Chỉ áp dụng cho tập train.
+  \item Cập nhật bbox \& density map theo biến đổi.
+  \item Bảo toàn số lượng đối tượng.
+\end{itemize}
+\end{block}
+\end{column}
+
+\begin{column}{0.34\textwidth}
+\setbeamercolor{block title}{bg=blue!60!black, fg=white}
+\setbeamercolor{block body}{bg=blue!5!white}
+\begin{block}{\textbf{Exemplar Crops}}
+\begin{itemize}\setlength{\itemsep}{1pt}
+  \item Đọc \texttt{annotation\_FSC147\_384.json}.
+  \item Crop bbox exemplar $\Rightarrow$ lưu vào \texttt{data/FSC147/box/}.
+  \item Tên file: \texttt{<img>\_box\_<i>.jpg}.
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% --- 3.2 Độ đo đánh giá ---
+\begin{frame}{3.2. Độ đo đánh giá}
+\scriptsize
+
+Hệ thống được đánh giá bằng hai độ đo (metric) chuẩn cho bài toán đếm:
+
+\vspace{0.5em}
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.48\textwidth}
+
+\setbeamercolor{block title}{bg=uitblue!80,fg=white}
+\setbeamercolor{block body}{bg=blue!5,fg=black}
+\begin{block}{\textbf{Mean Absolute Error (MAE)}}
+Đo trung bình giá trị sai số tuyệt đối:
+\[
+\mathrm{MAE} = \frac{1}{N}\sum_{i=1}^{N}\left|y_i - \hat{y}_i\right|
+\]
+$N$: số ảnh, $y_i$: ground truth, $\hat{y}_i$: dự đoán.\\[0.3em]
+$\Rightarrow$ Phản ánh \textbf{độ chính xác trung bình}.
+\end{block}
+
+\end{column}
+
+\begin{column}{0.48\textwidth}
+
+\setbeamercolor{block title}{bg=orange!80!black, fg=white}
+\setbeamercolor{block body}{bg=orange!6!white}
+\begin{block}{\textbf{Root Mean Squared Error (RMSE)}}
+Phạt nặng các sai số lớn nhờ bình phương trước khi lấy căn:
+\[
+\mathrm{RMSE} = \sqrt{\frac{1}{N}\sum_{i=1}^{N}(y_i - \hat{y}_i)^2}
+\]
+$\Rightarrow$ Phản ánh \textbf{độ ổn định} trên các trường hợp khó (outlier).
+\end{block}
+
+\end{column}
+\end{columns}
+
+\vspace{0.5em}
+
+\setbeamercolor{block title}{bg=green!70!black, fg=white}
+\setbeamercolor{block body}{bg=green!5!white}
+\begin{block}{\textbf{Nhận xét}}
+Sử dụng đồng thời cả hai cho phép đánh giá toàn diện: MAE phản ánh độ chính xác trung bình; RMSE phản ánh độ ổn định trên các trường hợp khó.
+\end{block}
+
+\end{frame}
+
+% --- 3.3 Setup ---
+\begin{frame}{3.3. Thiết lập thực nghiệm}
+\scriptsize
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.48\textwidth}
+
+\setbeamercolor{block title}{bg=uitblue!80,fg=white}
+\setbeamercolor{block body}{bg=blue!5,fg=black}
+\begin{block}{\textbf{Cấu hình phần cứng}}
+\begin{itemize}
+  \item \textbf{Huấn luyện:} NVIDIA H200, 24 CPU, 192\,GB RAM.
+  \item \textbf{Demo:} Intel i7-13620H + RTX 4060.
+\end{itemize}
+\end{block}
+
+\end{column}
+
+\begin{column}{0.48\textwidth}
+
+\setbeamercolor{block title}{bg=teal!70!black, fg=white}
+\setbeamercolor{block body}{bg=teal!5!white}
+\begin{block}{\textbf{Siêu tham số}}
+\centering
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{|l|c|}
+\hline
+\rowcolor{blue!10}
+\textbf{Tham số} & \textbf{Giá trị} \\
+\hline
+Optimizer & AdamW \\
+\hline
+Learning Rate & $1{\times}10^{-5}$ \\
+\hline
+Weight Decay & $0.05$ \\
+\hline
+LR Schedule & Cosine \\
+\hline
+Epochs & $500$ \\
+\hline
+Batch size & $8$ \\
+\hline
+Grad Accum & $16$ steps \\
+\hline
+\end{tabular}
+\end{block}
+
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% --- 3.4 Counting Performance ---
+\begin{frame}{3.4. Kết quả thực nghiệm}
+\scriptsize
+
+\textbf{Hiệu suất đếm trên dataset FSC-147}
+
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|l|c|c|}
+\hline
+\rowcolor{uitblue!15}
+\textbf{Mô hình} & \textbf{MAE} $\downarrow$ & \textbf{RMSE} $\downarrow$ \\
+\hline
+VA-Count (Baseline) & 17,99 & \textbf{129,39} \\
+\hline
+VA-Count + Rich Prompt & \textbf{17,80} & 129,69 \\
+\hline
+VA-Count + YOLO-World & 19,03 & 131,55 \\
+\hline
+\rowcolor{orange!10} VA-Count + YOLO-World + Rich Prompt & 17,91 & 130,98 \\
+\hline
+\end{tabular}
+
+\vspace{0.5em}
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\setbeamercolor{block title}{bg=blue!60!black, fg=white}
+\setbeamercolor{block body}{bg=blue!5!white}
+\begin{block}{\textbf{Phân tích}}
+\begin{itemize}
+  \item MAE khoảng hẹp $17{,}80$--$19{,}03$ $\Rightarrow$ chất lượng bị giới hạn bởi Counter (MAE-based).
+  \item Rich Prompt trên GDino: $\Delta = 0{,}19$ (gần bão hòa ngữ nghĩa).
+  \item Rich Prompt trên YOLO: $\Delta = 1{,}12$ (lợi ích lớn).
+\end{itemize}
+\end{block}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\setbeamercolor{block title}{bg=purple!70!black, fg=white}
+\setbeamercolor{block body}{bg=purple!5!white}
+\begin{block}{\textbf{Hiện tượng bão hòa ngữ nghĩa}}
+\begin{itemize}
+  \item GroundingDINO đã khai thác gần hết thông tin text $\Rightarrow$ thêm chi tiết ít lợi ích.
+  \item YOLO-World yếu hơn về ngữ nghĩa $\Rightarrow$ Rich Prompt bù đắp hiệu quả.
+  \item \emph{Bộ phát hiện càng yếu, Rich Prompt càng có ích.}
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% % --- 3.4 SOTA Comparison ---
+% \begin{frame}[shrink=5]{3.4. So sánh với các phương pháp tiêu biểu (SOTA)}
+% \scriptsize
+
+% \centering
+% \renewcommand{\arraystretch}{1.2}
+% \resizebox{0.98\textwidth}{!}{%
+% \begin{tabular}{|l|l|l|c|c|}
+% \hline
+% \rowcolor{uitblue!15}
+% \textbf{Nhóm} & \textbf{Phương pháp} & \textbf{Venue} & \textbf{MAE}$\downarrow$ & \textbf{RMSE}$\downarrow$ \\
+% \hline
+% \textit{Ref-less}  & FamNet               & CVPR'21  & 32{,}27          & 131{,}46 \\
+%                    & CounTR               & BMVC'22  & \textbf{14{,}71} & 106{,}87 \\
+%                    & LOCA                 & ICCV'23  & 16{,}22          & 103{,}96 \\
+% \hline
+% \textit{Few-shot}  & CounTR               & BMVC'22  & 11{,}95          & 91{,}23  \\
+%                    & LOCA                 & ICCV'23  & \textbf{10{,}97} & \textbf{56{,}97} \\
+% \hline
+% \textit{Zero-shot} & ZSC                  & CVPR'23  & 22{,}09          & 115{,}17 \\
+%                    & VA-Count (gốc)       & ECCV'24  & 17{,}88          & 129{,}31 \\
+% \rowcolor{green!8} & VA-Count (nhóm)      & {--}     & 17{,}99          & 129{,}39 \\
+% \rowcolor{green!8} & \quad +Rich Prompt   & {--}     & \textbf{17{,}80} & 129{,}69 \\
+% \rowcolor{green!8} & \quad +YOLO-World    & {--}     & 19{,}03          & 131{,}55 \\
+% \rowcolor{green!8} & \quad +YOLO+RP       & {--}     & 17{,}91          & 130{,}98 \\
+% \hline
+% \end{tabular}
+% }
+
+% \vspace{0.3em}
+
+% \setbeamercolor{block title}{bg=blue!60!black, fg=white}
+% \setbeamercolor{block body}{bg=blue!5!white}
+% \begin{block}{\textbf{Nhận xét}}
+% \begin{itemize}
+%   \item Few-shot tốt nhất (LOCA, MAE $10{,}97$) hơn zero-shot $\approx 7$ điểm MAE -- giới hạn tự nhiên của zero-shot.
+%   \item Hiện thực trung thực: MAE $17{,}99$ chỉ chênh $+0{,}11$ so với bài báo gốc ($17{,}88$).
+%   \item Chênh lệch 4 cấu hình chỉ $1{,}23$ điểm MAE $\Rightarrow$ \textbf{bộ đếm (Counter)} là nhân tố quyết định.
+% \end{itemize}
+% \end{block}
+
+% \end{frame}
+
+% --- 3.4 Extraction Time ---
+\begin{frame}{3.4. Thời gian trích xuất mẫu}
+\scriptsize
+
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|l|c|c|}
+\hline
+\rowcolor{uitblue!15}
+\textbf{Phương pháp} & \textbf{Positive (giờ)} & \textbf{Negative (giờ)} \\
+\hline
+Grounding DINO (Baseline) & $\approx 3$ & $\approx 10$ \\
+\hline
+Grounding DINO + Rich Prompt & $\approx 10$ & $\approx 15$ \\
+\hline
+\rowcolor{green!8} YOLO-World & $\approx 0.5$ & $\approx 2$ \\
+\hline
+\rowcolor{green!8} YOLO-World + Rich Prompt & $\approx 1$ & $\approx 3$ \\
+\hline
+\end{tabular}
+
+\vspace{0.5em}
+
+\setbeamercolor{block title}{bg=teal!70!black, fg=white}
+\setbeamercolor{block body}{bg=teal!5!white}
+\begin{block}{\textbf{Nhận xét}}
+\begin{itemize}
+  \item YOLO-World nhanh gấp \textbf{6$\times$} GroundingDINO (positive).
+  \item GroundingDINO + Rich Prompt: \textbf{25 giờ} tổng vs YOLO-World + RP: \textbf{4 giờ}.
+  \item Khác biệt mang tính quyết định cho chuẩn bị dữ liệu quy mô lớn.
+\end{itemize}
+\end{block}
+
+\end{frame}
+
+
+% --- 3.4b Correct counting examples ---
+\begin{frame}{3.4. Minh họa kết quả đếm đúng}
+\scriptsize
+
+Hệ thống cho thấy khả năng đếm chính xác cao trên nhiều loại đối tượng đa dạng. Dưới đây là ba ví dụ tiêu biểu trên tập test:
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.32\textwidth}
+\centering
+\begin{center}
+  \includegraphics[width=0.95\textwidth]{vis1.png}
+  \captionof{figure}{Bi: GT$=11$, Pred$=11{,}2$. Sai số $1{,}8\%$.}
+\end{center}
+\end{column}
+
+\begin{column}{0.32\textwidth}
+\centering
+\begin{center}
+  \includegraphics[width=0.95\textwidth]{vis2.png}
+  \captionof{figure}{Cừu: GT$=32$, Pred$=32{,}2$. Sai số $0{,}6\%$.}
+\end{center}
+\end{column}
+
+\begin{column}{0.32\textwidth}
+\centering
+\begin{center}
+  \includegraphics[width=0.95\textwidth]{vis3.png}
+  \captionof{figure}{Táo: GT$=33$, Pred$=32{,}67$. Sai số $1\%$.}
+\end{center}
+\end{column}
+\end{columns}
+
+\vspace{0.3em}
+
+\setbeamercolor{block title}{bg=green!70!black, fg=white}
+\setbeamercolor{block body}{bg=green!5!white}
+\begin{block}{\textbf{Nhận xét}}
+Bên trái: ảnh gốc với positive exemplars (xanh lá) và negative exemplars (đỏ). Bên phải: density map với overlay dự đoán. Bản đồ mật độ tập trung chính xác vào vị trí các đối tượng, cho sai số $<2\%$ trên các trường hợp này.
+\end{block}
+
+\end{frame}
+
+
+% --- 3.4 Inference Speed ---
+\begin{frame}{3.4. Tốc độ suy luận \& đánh đổi tốc độ--chính xác}
+\scriptsize
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.45\textwidth}
+
+\centering
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{|l|c|}
+\hline
+\rowcolor{uitblue!15}
+\textbf{Phương pháp} & \textbf{s/ảnh} \\
+\hline
+VA-Count & 1,47 \\
+\hline
+VA-Count + RP & 5,76 \\
+\hline
+\rowcolor{green!8} YOLO-World & \textbf{0,60} \\
+\hline
+\rowcolor{orange!10} YOLO + RP & 2,41 \\
+\hline
+\end{tabular}
+
+\vspace{0.5em}
+
+\setbeamercolor{block title}{bg=teal!70!black, fg=white}
+\setbeamercolor{block body}{bg=teal!5!white}
+\begin{block}{\textbf{Nhận xét}}
+\begin{itemize}
+  \item YOLO-World: \textbf{0,60s} (2,5$\times$ nhanh hơn baseline).
+  \item \textbf{YOLO + RP}: MAE 17,91 với 2,4s/ảnh $\Rightarrow$ cân bằng tốt nhất.
+\end{itemize}
+\end{block}
+
+\end{column}
+
+\begin{column}{0.52\textwidth}
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}
+\begin{axis}[
+    width=8cm,
+    height=5.5cm,
+    xlabel={Độ trễ (s/ảnh)},
+    ylabel={MAE $\downarrow$},
+    xmin=0, xmax=6.5,
+    ymin=17.0, ymax=20.0,
+    grid=major,
+    grid style={dashed,gray!40},
+    legend pos=north east,
+    legend style={font=\tiny, draw=gray!50},
+    scatter/classes={
+        a={mark=*,draw=blue!80,fill=blue!50,mark size=3pt},
+        b={mark=square*,draw=red!80,fill=red!50,mark size=3pt},
+        c={mark=triangle*,draw=teal!80,fill=teal!50,mark size=3pt},
+        d={mark=diamond*,draw=orange!80,fill=orange!60,mark size=3.5pt}
+    },
+]
+\addplot[scatter, only marks, scatter src=explicit symbolic]
+    coordinates {
+        (0.6006, 19.03) [a]
+        (1.4710, 17.99) [b]
+        (2.4054, 17.91) [d]
+        (5.7578, 17.80) [c]
+    };
+\legend{YOLO-World, VA-Count, YOLO+RP, GDino+RP}
+\node[font=\tiny, anchor=south west, xshift=2pt] at (axis cs:0.6006,19.03) {YOLO};
+\node[font=\tiny, anchor=south west, xshift=2pt] at (axis cs:1.4710,17.99) {VA-Count};
+\node[font=\tiny, anchor=south west, xshift=2pt] at (axis cs:2.4054,17.91) {YOLO+RP};
+\node[font=\tiny, anchor=south east, xshift=-2pt] at (axis cs:5.7578,17.80) {GDino+RP};
+\draw[->,thick,dashed,gray!60] (axis cs:3.0,19.5) -- (axis cs:0.8,17.5)
+    node[pos=0.4,above,sloped,font=\tiny\itshape,text=gray]{tối ưu};
+\end{axis}
+\end{tikzpicture}%
+}\\
+{\tiny Đánh đổi tốc độ -- chính xác. Mũi tên: hướng tối ưu.}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% --- 3.4 MAE vs Density ---
+\begin{frame}{3.4. Phân tích MAE theo mật độ đối tượng}
+\scriptsize
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.55\textwidth}
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}
+\begin{axis}[
+    width=9cm,
+    height=6cm,
+    xlabel={Mật độ (obj/Mpx, log scale)},
+    ylabel={MAE trung bình},
+    xmode=log,
+    grid=major,
+    grid style={dashed,gray!40},
+    legend pos=north west,
+    legend style={font=\tiny, draw=gray!50},
+    mark options={solid},
+]
+\addplot[blue!80, thick, mark=*,     mark size=2.5pt] table[x=bin_mid, y=baseline]   {figures/mae_vs_density.dat};
+\addplot[red!80,  thick, mark=square*,mark size=2.5pt] table[x=bin_mid, y=richprompt] {figures/mae_vs_density.dat};
+\addplot[teal!80, thick, mark=triangle*,mark size=2.5pt] table[x=bin_mid, y=yolo]     {figures/mae_vs_density.dat};
+\addplot[orange!80,thick,mark=diamond*,mark size=3pt]  table[x=bin_mid, y=yolo_rp]   {figures/mae_vs_density.dat};
+\legend{VA-Count, +Rich Prompt, +YOLO-World, +YOLO+RP}
+\end{axis}
+\end{tikzpicture}%
+}
+\end{column}
+
+\begin{column}{0.42\textwidth}
+\setbeamercolor{block title}{bg=purple!70!black, fg=white}
+\setbeamercolor{block body}{bg=purple!5!white}
+\begin{block}{\textbf{Nhận xét}}
+\begin{itemize}
+  \item Mật độ thấp ($<$50 obj/Mpx): MAE $<$ 10 ở mọi cấu hình.
+  \item Mật độ cao ($>$500 obj/Mpx): MAE vượt 50 $\Rightarrow$ đếm thiếu ở mật độ dày đặc.
+  \item YOLO-World (không RP) luôn có MAE cao nhất ở mọi nhóm mật độ.
+  \item YOLO+RP bám sát baseline $\Rightarrow$ Rich Prompt bù đắp ngữ nghĩa hiệu quả.
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% --- 3.4 MAE vs Size ---
+\begin{frame}{3.4. Phân tích MAE theo kích thước đối tượng}
+\scriptsize
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.55\textwidth}
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}
+\begin{axis}[
+    width=9cm,
+    height=6cm,
+    xlabel={Diện tích trung bình bbox (px$^2$, log scale)},
+    ylabel={MAE trung bình},
+    xmode=log,
+    grid=major,
+    grid style={dashed,gray!40},
+    legend pos=north east,
+    legend style={font=\tiny, draw=gray!50},
+    mark options={solid},
+]
+\addplot[blue!80, thick, mark=*,     mark size=2.5pt] table[x=bin_mid, y=baseline]   {figures/mae_vs_size.dat};
+\addplot[red!80,  thick, mark=square*,mark size=2.5pt] table[x=bin_mid, y=richprompt] {figures/mae_vs_size.dat};
+\addplot[teal!80, thick, mark=triangle*,mark size=2.5pt] table[x=bin_mid, y=yolo]     {figures/mae_vs_size.dat};
+\addplot[orange!80,thick,mark=diamond*,mark size=3pt]  table[x=bin_mid, y=yolo_rp]   {figures/mae_vs_size.dat};
+\legend{VA-Count, +Rich Prompt, +YOLO-World, +YOLO+RP}
+\end{axis}
+\end{tikzpicture}%
+}
+\end{column}
+
+\begin{column}{0.42\textwidth}
+\setbeamercolor{block title}{bg=teal!70!black, fg=white}
+\setbeamercolor{block body}{bg=teal!5!white}
+\begin{block}{\textbf{Nhận xét}}
+\begin{itemize}
+  \item Xu hướng ngược lại so với mật độ: đối tượng nhỏ ($<$500 px$^2$) có MAE cao nhất.
+  \item Đối tượng lớn ($>$6\,000 px$^2$): MAE thấp nhất.
+  \item YOLO-World (không RP) chênh lệch lớn nhất ($\sim$4--5 MAE) ở nhóm đối tượng nhỏ.
+  \item Rich Prompt thu hẹp khoảng cách đáng kể.
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% --- 3.4 Qualitative ---
+\begin{frame}{3.4. So sánh định tính giữa VA-Count và Yolo-World (tt.)}
+\scriptsize
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.48\textwidth}
+\centering
+\textbf{VA-Count (GroundingDINO)}\\[0.3em]
+\begin{center}
+  \includegraphics[width=0.95\textwidth]{exp2_result_711.jpg}
+  \captionof{figure}{VA-Count (GroundingDINO) -- ảnh 711: kết quả tốt.}
+\end{center}
+
+
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\centering
+\textbf{YOLO-World}\\[0.3em]
+\begin{center}
+  \includegraphics[width=0.95\textwidth]{exp3_best_711.png}
+  \captionof{figure}{YOLO-World -- ảnh 711: chọn mẫu tốt.}
+\end{center}
+
+\end{column}
+\end{columns}
+
+\vspace{0.3em}
+
+\setbeamercolor{block title}{bg=orange!80!black, fg=white}
+\setbeamercolor{block body}{bg=orange!6!white}
+\begin{block}{\textbf{So sánh kết quả trên ảnh 711 (best case)}}
+YOLO-World chọn được mẫu (exemplar) chính xác, bản đồ
+mật độ tập trung tốt vào đối tượng mục tiêu, cho kết quả đếm tương đương hoặc tốt hơn VA-Count gốc
+trên trường hợp này.
+\end{block}
+
+\end{frame}
+
+% --- 3.4 Qualitative ---
+\begin{frame}[shrink=10]{3.4. So sánh định tính giữa VA-Count và Yolo-World (tt.)}
+\scriptsize
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.48\textwidth}
+\centering
+\textbf{VA-Count (GroundingDINO)}\\[0.3em]
+
+\begin{center}
+  \includegraphics[width=0.95\textwidth]{exp2_result_716.jpg}
+  \captionof{figure}{VA-Count (GroundingDINO) -- ảnh 716: kết quả kém.}
+\end{center}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\centering
+\textbf{YOLO-World}\\[0.3em]
+
+\begin{center}
+  \includegraphics[width=0.95\textwidth]{exp3_worst_716.png}
+  \captionof{figure}{YOLO-World -- ảnh 716: gặp khó khăn.}
+\end{center}
+\end{column}
+\end{columns}
+
+\vspace{0.3em}
+\setbeamercolor{block title}{bg=orange!80!black, fg=white}
+\setbeamercolor{block body}{bg=orange!6!white}
+\begin{block}{\textbf{So sánh kết quả trên ảnh 716 (worst case)}}
+Do năng lực nhận dạng ngữ nghĩa yếu hơn, YOLO-World chọn mẫu kém chính xác hơn, dẫn đến bản đồ mật độ phân tán và sai số đếm lớn hơn so với VA-Count gốc.
+\end{block}
+
+\vspace{0.3em}
+\setbeamercolor{block title}{bg=purple!70!black, fg=white}
+\setbeamercolor{block body}{bg=purple!5!white}
+\begin{block}{\textbf{NHẬN XÉT}}
+Khi đối tượng rõ ràng, YOLO-World cạnh tranh tốt. khi đối tượng có hình dạng hoặc kết cấu (texture) tương tự vật thể nền, việc thiếu cơ chế tương tác thị giác-ngôn ngữ tại thời điểm suy luận khiến YOLO-World chọn sai mẫu, dẫn đến bản đồ mật độ bị phân tán và sai số đếm tăng đáng kể. Đây chính là lý do Rich Prompt mang lại cải thiện lớn ($\Delta$MAE $= 1{,}12$) cho YOLO-World: mô tả ngữ nghĩa chi tiết từ LLM giúp bù đắp khả năng phân biệt mà YOLO-World thiếu. 
+
+\end{block}
+
+\end{frame}
+
+
+
+% --- 3.5 Error Analysis ---
+\begin{frame}{3.5. Phân tích lỗi sai}
+\scriptsize
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.3\textwidth}
+\setbeamercolor{block title}{bg=red!70!black, fg=white}
+\setbeamercolor{block body}{bg=red!5!white}
+\begin{block}{\textbf{Mật độ dày đặc}}
+Đối tượng nhỏ, sát nhau $\Rightarrow$ density map suy giảm $\Rightarrow$ \textbf{đếm thiếu}.
+\begin{center}
+  \includegraphics[width=0.95\textwidth]{dem-sai-do-mat-do-day.png}
+  \captionof{figure}{Lỗi mật độ dày: GT=371, Pred$\approx$251.}
+\end{center}
+\end{block}
+\end{column}
+
+\begin{column}{0.3\textwidth}
+\setbeamercolor{block title}{bg=orange!80!black, fg=white}
+\setbeamercolor{block body}{bg=orange!6!white}
+\begin{block}{\textbf{Phân mảnh}}
+Vật thể cấu trúc chia tách (cửa sổ nhiều ô) $\Rightarrow$ nhiều local maxima $\Rightarrow$ \textbf{đếm thừa}.
+\begin{center}
+  \includegraphics[width=0.95\textwidth]{failure_fragment.png}
+  \captionof{figure}{Lỗi phân mảnh: GT=13, Pred$\approx$27.}
+\end{center}
+\end{block}
+\end{column}
+
+
+\end{columns}
+
+\end{frame}
+
+%==================================================================
+%                    SECTION 4: DEMO
+%==================================================================
+\section{Demo và đánh giá hệ thống}
+
+% --- 4.1 Cài đặt và chạy demo ---
+\begin{frame}[fragile, shrink=5]{4.1. Cài đặt và chạy demo}
+\scriptsize
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.52\textwidth}
+
+\setbeamercolor{block title}{bg=uitblue!80,fg=white}
+\setbeamercolor{block body}{bg=blue!5,fg=black}
+\begin{block}{\textbf{Thành phần chính}}
+\begin{itemize}
+  \item \texttt{demo\_app\_advanced.py}: ứng dụng Streamlit nâng cao.
+  \item \texttt{demo\_inference.py}: thư viện suy luận dùng chung.
+  \item \texttt{demo\_pipeline\_advanced.py}: module pipeline đầy đủ.
+  \item \texttt{demo\_visualization.py}: các hàm vẽ overlay.
+\end{itemize}
+\end{block}
+
+\setbeamercolor{block title}{bg=teal!70!black, fg=white}
+\setbeamercolor{block body}{bg=teal!5!white}
+\begin{block}{\textbf{Mã nguồn}}
+\href{https://github.com/paht2005/CS338.Q21_Zero-shot-Object-Coutning-with-Good-Examplers}{GitHub Repository}\\
+Video Demo: cập nhật trong \texttt{README.md} (mục \emph{Demo \& Outputs}).
+\end{block}
+
+\end{column}
+
+\begin{column}{0.45\textwidth}
+
+\setbeamercolor{block title}{bg=green!70!black, fg=white}
+\setbeamercolor{block body}{bg=green!5!white}
+\begin{block}{\textbf{Hướng dẫn cài đặt}}
+\begin{lstlisting}[style=codestyle, language=bash, numbers=none]
+cd code/source-code
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# Set Gemini API key
+cp .env.example .env
+# edit .env: GEMINI_API_KEY=...
+
+# Run Streamlit demo
+streamlit run demo_app_advanced.py
+\end{lstlisting}
+\end{block}
+
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% --- 4.2 Giao diện và tương tác ---
+\begin{frame}[shrink=5]{4.2. Giao diện và tương tác}
+\scriptsize
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.45\textwidth}
+
+\setbeamercolor{block title}{bg=uitblue!80,fg=white}
+\setbeamercolor{block body}{bg=blue!5,fg=black}
+\begin{block}{\textbf{Tùy chọn cấu hình}}
+\begin{itemize}
+  \item Bộ trích xuất: GroundingDINO / YOLO-World.
+  \item Bật/tắt Rich Prompt.
+  \item Mặc định: \textbf{YOLO-World + Rich Prompt}.
+\end{itemize}
+\end{block}
+
+\setbeamercolor{block title}{bg=green!70!black, fg=white}
+\setbeamercolor{block body}{bg=green!5!white}
+\begin{block}{\textbf{Quy trình tương tác}}
+\begin{enumerate}
+  \item Tải lên ảnh tự nhiên.
+  \item Nhập tên lớp tiếng Anh (ví dụ: \texttt{oranges}).
+  \item Nhận kết quả: tổng số đối tượng + density map overlay + bbox dương/âm.
+\end{enumerate}
+\end{block}
+
+\end{column}
+
+\begin{column}{0.52\textwidth}
+\begin{center}
+  \includegraphics[width=\textwidth]{demo_streamlit.png}
+  \captionof{figure}{Demo Streamlit: ảnh gốc + positive exemplars (trái), density map (giữa), overlay (phải). \texttt{346.jpg} (strawberries): GT=11, Pred=11.26.}
+\end{center}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% --- 4.3 Đánh giá định tính ---
+\begin{frame}[shrink=5]{4.3. Đánh giá định tính}
+\scriptsize
+
+\setbeamercolor{block title}{bg=uitblue!80,fg=white}
+\setbeamercolor{block body}{bg=blue!5,fg=black}
+\begin{block}{\textbf{Kiểm thử trên ảnh khó từ FSC-147 và ảnh ngoài tập}}
+\begin{itemize}
+  \item Cấu hình \textbf{YOLO-World + Rich Prompt} cho phản hồi nhanh ($\sim$2s) và chấp nhận được trên CPU/GPU laptop.
+  \item Khi tên lớp rõ ràng và đối tượng phân tách tốt, kết quả gần với ground truth.
+  \item Trên các ảnh dày đặc hoặc tên lớp mơ hồ, hệ thống bộc lộ đúng các lỗi đã phân loại ở Mục~3.5 (mật độ dày đặc, phân mảnh, sai số phương pháp).
+\end{itemize}
+\end{block}
+
+\vspace{0.5em}
+
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.48\textwidth}
+\begin{center}
+  \includegraphics[width=\textwidth]{vis_peas_result.png}
+  \captionof{figure}{Kết quả đếm trên ảnh peas: density map tập trung đúng vị trí.}
+\end{center}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{center}
+  \includegraphics[width=\textwidth]{vis_dense_negexemplar.jpg}
+  \captionof{figure}{Trường hợp mật độ dày đặc (175 đối tượng): mẫu âm (đỏ) đánh dấu nền, mẫu dương (xanh lá) chọn đúng marker pen.}
+\end{center}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+%==================================================================
+%                    SECTION 5: KẾT LUẬN
+%==================================================================
+\section{Kết luận và hướng phát triển}
+
+% --- 5.1 Kết luận ---
+\begin{frame}[shrink=10]{5.1. Kết luận}
+\scriptsize
+
+\setbeamercolor{block title}{bg=blue!70!black, fg=white}
+\setbeamercolor{block body}{bg=blue!5!white}
+\begin{block}{\textbf{Về kiến trúc}}
+VA-Count là thiết kế giàu thông tin học được, tách rõ giữa pha lấy mẫu (EEM) và pha sinh bản đồ mật độ (NSM). Luồng dương/âm tạo điều kiện cho cơ chế học tương phản (contrastive), hữu hiệu cho zero-shot counting.
+\end{block}
+
+\setbeamercolor{block title}{bg=teal!70!black, fg=white}
+\setbeamercolor{block body}{bg=teal!5!white}
+\begin{block}{\textbf{Về cải tiến}}
+\begin{itemize}\setlength{\itemsep}{2pt}
+  \item \textbf{Rich Prompt:} hiệu quả lớn với YOLO-World ($19{,}03 \to 17{,}91$, $\Delta=1{,}12$), khiêm tốn với GDino ($\Delta=0{,}19$) do bão hòa ngữ nghĩa.
+  \item \textbf{YOLO-World:} loại bỏ bottleneck tốc độ (trích xuất: 25h $\to$ 4h; demo: 0,60s/ảnh).
+  \item \textbf{YOLO-World + Rich Prompt:} cân bằng tốt nhất -- MAE 17,91 với 2,4s/ảnh.
+  \item \textbf{Phát hiện quan trọng:} bộ phát hiện càng yếu về ngữ nghĩa, Rich Prompt càng mang lại lợi ích lớn.
+\end{itemize}
+\end{block}
+
+\setbeamercolor{block title}{bg=orange!80!black, fg=white}
+\setbeamercolor{block body}{bg=orange!6!white}
+\begin{block}{\textbf{Về cài đặt}}
+\begin{itemize}\setlength{\itemsep}{1pt}
+  \item CLIP ViT-B/32 cho cả re-ranking và bộ phân loại nhị phân.
+  \item Gemini 2.5 Flash (\texttt{gemini-2.5-flash}).
+\end{itemize}
+\end{block}
+
+\setbeamercolor{block title}{bg=red!70!black, fg=white}
+\setbeamercolor{block body}{bg=red!5!white}
+\begin{block}{\textbf{Hạn chế}}
+\begin{itemize}\setlength{\itemsep}{1pt}
+  \item Chất lượng đếm bị giới hạn bởi Counter (MAE-based) $\Rightarrow$ 4 cấu hình cùng kiến trúc Counter, chỉ khác EEM.
+  \item Mật độ dày đặc ($>$500 obj/Mpx) $\Rightarrow$ MAE vượt 50; đối tượng phân mảnh $\Rightarrow$ đếm thừa.
+  
+\end{itemize}
+\end{block}
+
+\end{frame}
+
+% --- 5.2 Hướng phát triển ---
+\begin{frame}{5.2. Hướng phát triển}
+\scriptsize
+
+\begin{columns}[T,onlytextwidth]
+
+\begin{column}{0.48\textwidth}
+\setbeamercolor{block title}{bg=teal!75!black, fg=white}
+\setbeamercolor{block body}{bg=teal!5!white}
+\begin{block}{\textbf{Ngắn hạn}}
+\begin{itemize}\setlength{\itemsep}{2pt}
+  \item \textbf{Khử phân mảnh:} graph-based clustering, watershed hoặc head phụ dự đoán instance-aware density.
+  \item \textbf{Mật độ dày đặc:} multi-resolution / tile-based inference để giữ chi tiết tại biên vật thể sát nhau.
+    
+\end{itemize}
+\end{block}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\setbeamercolor{block title}{bg=purple!70!black, fg=white}
+\setbeamercolor{block body}{bg=purple!5!white}
+\begin{block}{\textbf{Dài hạn}}
+\begin{itemize}\setlength{\itemsep}{2pt}
+  \item \textbf{Khử thiên lệch:} đối sánh trực tiếp (CounTR) thay density map MAE.
+  \item \textbf{Regularizer:} ép output = 0 khi mẫu không hợp lệ.
+  \item \textbf{Triển khai:} Docker + HuggingFace Spaces / Vercel deployment.
+\end{itemize}
+\end{block}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+% ==================== REFERENCES ====================
+\begin{frame}{Tài liệu tham khảo}
+\scriptsize
+\begin{thebibliography}{10}
+
+\bibitem{vacount}
+H.~Zhu \emph{et~al.},
+\textit{Zero-shot object counting with good exemplars},
+ECCV, 2024.
+
+\bibitem{richprompts}
+H.~Zhu \emph{et~al.},
+\textit{Expanding zero-shot object counting with rich prompts},
+arXiv:2505.15398, 2025.
+
+\bibitem{yoloworld}
+T.~Cheng \emph{et~al.},
+\textit{YOLO-World: Real-time open-vocabulary object detection},
+CVPR, 2024.
+
+\bibitem{groundingdino}
+S.~Liu \emph{et~al.},
+\textit{Grounding DINO: Marrying DINO with grounded pre-training},
+ECCV, 2024.
+
+\bibitem{clip}
+A.~Radford \emph{et~al.},
+\textit{Learning transferable visual models from natural language supervision (CLIP)},
+ICML, 2021.
+
+\bibitem{ranjan2021fsc147}
+V.~Ranjan \emph{et~al.},
+\textit{Learning to count everything (FSC-147)},
+CVPR, 2021.
+
+\bibitem{gemini}
+Google DeepMind,
+\textit{Gemini API documentation}, 2024--2026.
+
+\bibitem{mae}
+K.~He \emph{et~al.},
+\textit{Masked autoencoders are scalable vision learners},
+CVPR, 2022.
+
+\end{thebibliography}
+\end{frame}
+
+% ==================== THANK YOU ====================
+\begin{frame}{Thank you!}
+  \begin{center}
+    \Large Thank you for your listening! \\
+    \vspace{0.5cm}
+    \normalsize Q\&A -- Demo
+  \end{center}
+\end{frame}
+
+\end{document}

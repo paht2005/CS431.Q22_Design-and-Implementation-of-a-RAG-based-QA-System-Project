@@ -23,8 +23,6 @@ import util.misc as misc
 import models_mae_cross
 
 import pathlib
-temp = pathlib.PosixPath
-pathlib.PosixPath = pathlib.WindowsPath
 
 def get_args_parser():
     parser = argparse.ArgumentParser('MAE pre-training', add_help=False)
@@ -240,7 +238,7 @@ def main(args):
     cudnn.benchmark = True
 
     # dataset_test = TestData(external=args.external, box_bound=args.box_bound, split=args.split)
-    dataset_test = TestData(args, split='test')
+    dataset_test = TestData(args, split=args.split)
     num_tasks = misc.get_world_size()
     global_rank = misc.get_rank()
     sampler_test = torch.utils.data.DistributedSampler(
@@ -346,6 +344,19 @@ if __name__ == '__main__':
     anno_file = data_path / args.anno_file
     data_split_file = data_path / args.data_split_file
     im_dir = data_path / args.im_dir
+    if not im_dir.exists():
+        for _cand in ['images_384_VarV2', 'images_384', 'images']:
+            _d = data_path / _cand
+            if _d.exists():
+                print(f"[warn] --im_dir '{args.im_dir}' not found; falling back to '{_cand}'")
+                im_dir = _d
+                break
+        else:
+            raise FileNotFoundError(
+                f"Image directory not found under {data_path}. "
+                f"Tried: {args.im_dir}, images_384_VarV2, images_384, images. "
+                f"Override with --im_dir <name>."
+            )
 
     with open(anno_file) as f:
         annotations = json.load(f)

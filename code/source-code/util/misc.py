@@ -371,7 +371,15 @@ def load_model_FSC(args, model_without_ddp):
             checkpoint = torch.hub.load_state_dict_from_url(
                 args.resume, map_location='cpu', check_hash=True)
         else:
-            checkpoint = torch.load(args.resume, map_location='cpu', weights_only=False)
+            import pathlib as _pathlib
+            _win = getattr(_pathlib, 'WindowsPath', None)
+            if _win is not None:
+                _pathlib.WindowsPath = _pathlib.PosixPath
+            try:
+                checkpoint = torch.load(args.resume, map_location='cpu', weights_only=False)
+            finally:
+                if _win is not None:
+                    _pathlib.WindowsPath = _win
 
         if 'pos_embed' in checkpoint['model'] and checkpoint['model']['pos_embed'].shape != model_without_ddp.state_dict()['pos_embed'].shape:
             print(f"Removing key pos_embed from pretrained checkpoint")

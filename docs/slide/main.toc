@@ -1,6 +1,0 @@
-\xpg@aux {}{vietnamese}
-\beamer@sectionintoc {1}{Tổng quan đề tài}{3}{0}{1}
-\beamer@sectionintoc {2}{Phương pháp thực hiện}{9}{0}{2}
-\beamer@sectionintoc {3}{Thực nghiệm và kết quả}{15}{0}{3}
-\beamer@sectionintoc {4}{Demo và đánh giá hệ thống}{26}{0}{4}
-\beamer@sectionintoc {5}{Kết luận và hướng phát triển}{30}{0}{5}

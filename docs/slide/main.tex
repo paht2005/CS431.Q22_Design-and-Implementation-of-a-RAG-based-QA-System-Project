@@ -4,13 +4,20 @@
 
 % --- Vietnamese ---
 \usepackage{fontspec}
-\setmainfont{TeX Gyre Termes}
+\setmainfont{texgyretermes}[
+    Extension      = .otf,
+    UprightFont    = *-regular,
+    BoldFont       = *-bold,
+    ItalicFont     = *-italic,
+    BoldItalicFont = *-bolditalic
+]
 \usepackage{polyglossia}
 \setdefaultlanguage{vietnamese}
 
 % --- Packages ---
 \usepackage{tikz}
 \usepackage{pgfplots}
+\usepackage{pgfplotstable}
 \pgfplotsset{compat=1.18}
 \usetikzlibrary{positioning}
 \setbeamerfont{caption}{size=\tiny}
@@ -254,8 +261,8 @@
 \begin{enumerate}
   \item \textbf{Cơ chế tự sinh mẫu (exemplar) hoàn toàn tự động.}\\
   Dùng GroundingDINO phát hiện sơ bộ $\Rightarrow$ không cần bounding box thủ công.
-  \item \textbf{Kiến trúc hai nhánh đối lập (contrastive dual-branch).}\\
-  Nhánh dương + nhánh âm $\Rightarrow$ phân biệt tiền cảnh/nền hiệu quả.
+  \item \textbf{Kiến trúc hai luồng đối lập (contrastive dual-process).}\\
+  Luồng Dương (Positive Process) + Luồng Âm (Negative Process) $\Rightarrow$ phân biệt tiền cảnh/nền hiệu quả.
   \item \textbf{Thiết kế module hóa, dễ mở rộng.}\\
   Tách biệt EEM (lấy mẫu) và NSM (sinh density map) $\Rightarrow$ thay thế từng thành phần dễ dàng.
 \end{enumerate}
@@ -276,7 +283,7 @@
 \begin{block}{Các đóng góp chính}
 \begin{enumerate}
   \item \textbf{Hiện thực hệ thống VA-Count cơ sở} -- EEM (GroundingDINO) + NSM (contrastive loss).
-  \item \textbf{Tích hợp Rich Prompts} -- Gemini 2.0 Flash sinh mô tả chi tiết + CLIP ViT-L/14 re-rank.
+  \item \textbf{Tích hợp Rich Prompts} -- Gemini 2.5 Flash sinh mô tả chi tiết + CLIP ViT-B/32 re-rank.
   \item \textbf{Tích hợp YOLO-World} thay GroundingDINO -- nhanh hơn đáng kể.
   \item \textbf{Đánh giá đầy đủ trên FSC-147} -- 4 cấu hình: baseline, +Rich Prompt, +YOLO-World, +YOLO+RP.
   \item \textbf{Phân tích hiện tượng bão hòa ngữ nghĩa} -- GroundingDINO gần ngưỡng bão hòa, YOLO-World hưởng lợi nhiều từ Rich Prompt ($\Delta$MAE $=1{,}12$ vs $0{,}19$).
@@ -296,7 +303,7 @@
 
 \begin{center}
   \includegraphics[width=\textwidth]{system_overview.png}
-  \captionof{figure}{Tổng quan kiến trúc VA-Count: hai nhánh positive/negative qua EEM và NSM.}
+  \captionof{figure}{Tổng quan kiến trúc VA-Count: hai luồng positive/negative qua EEM và NSM.}
 \end{center}
 
 \begin{columns}[T,onlytextwidth]
@@ -304,10 +311,10 @@
 
 \setbeamercolor{block title}{bg=blue!60!black, fg=white}
 \setbeamercolor{block body}{bg=blue!5!white}
-\begin{block}{\textbf{Hai nhánh xử lý}}
+\begin{block}{\textbf{Hai luồng xử lý}}
 \begin{itemize}
-  \item \textbf{Nhánh dương:} tìm mẫu dương $\Rightarrow$ density map $D_p$ tập trung vào đối tượng cần đếm.
-  \item \textbf{Nhánh âm:} tìm mẫu âm $\Rightarrow$ density map $D_n$ tập trung vào nhiễu nền.
+  \item \textbf{Luồng Dương:} tìm mẫu dương $\Rightarrow$ density map $D_p$ tập trung vào đối tượng cần đếm.
+  \item \textbf{Luồng Âm:} tìm mẫu âm $\Rightarrow$ density map $D_n$ tập trung vào nhiễu nền.
 \end{itemize}
 \end{block}
 
@@ -348,8 +355,8 @@ Tự động phát hiện và tinh chỉnh các mẫu (exemplars) từ ảnh đ�
 \setbeamercolor{block body}{bg=blue!5!white}
 \begin{block}{\textbf{Bước 1: Khởi tạo mẫu (GroundingDINO)}}
 \begin{itemize}
-  \item \textbf{Nhánh dương:} ảnh + tên lớp (vd. \texttt{single dog .}) $\Rightarrow$ bbox ứng viên dương.
-  \item \textbf{Nhánh âm:} ảnh + prompt chung (\texttt{object .} hoặc top-5 lớp âm) $\Rightarrow$ tất cả vật thể (gồm cả mục tiêu và nhiễu).
+  \item \textbf{Luồng Dương:} ảnh + tên lớp (vd. \texttt{single dog .}) $\Rightarrow$ bbox ứng viên dương.
+  \item \textbf{Luồng Âm:} ảnh + prompt chung (\texttt{object .}) $\Rightarrow$ tất cả vật thể (gồm cả mục tiêu và nhiễu).
 \end{itemize}
 \end{block}
 
@@ -357,8 +364,8 @@ Tự động phát hiện và tinh chỉnh các mẫu (exemplars) từ ảnh đ�
 \setbeamercolor{block body}{bg=teal!5!white}
 \begin{block}{\textbf{Bước 3: Chọn top-$k$ mẫu}}
 \begin{itemize}
-  \item Mặc định: \textbf{top-3} mỗi nhánh theo confidence score của GroundingDINO.
-  \item Rich Prompt mở rộng lên \textbf{top-5} cho nhánh dương.
+  \item Mặc định: \textbf{top-3} mỗi luồng theo confidence score của GroundingDINO.
+  \item Rich Prompt mở rộng lên \textbf{top-5} cho luồng Dương.
 \end{itemize}
 \end{block}
 
@@ -369,18 +376,18 @@ Tự động phát hiện và tinh chỉnh các mẫu (exemplars) từ ảnh đ�
 \setbeamercolor{block title}{bg=green!70!black, fg=white}
 \setbeamercolor{block body}{bg=green!5!white}
 \begin{block}{\textbf{Bước 2: Tinh chỉnh \& lọc}}
-\textbf{Loại trùng lặp (Deduplication -- chỉ nhánh âm):}
+\textbf{Loại trùng lặp (Deduplication -- chỉ luồng Âm):}
 \begin{itemize}
-  \item So sánh hộp âm với hộp dương: IoU cao $\Rightarrow$ loại bỏ.
+  \item So sánh box âm với box dương: IoU cao $\Rightarrow$ loại bỏ.
   \item Đảm bảo mẫu âm không trùng mẫu dương.
 \end{itemize}
 
 \vspace{0.3em}
 \textbf{Bộ lọc đơn đối tượng (Single-Object Filter):}
 \begin{itemize}
-  \item Bộ phân loại nhị phân $\phi_{\text{single}}$ dựa trên \textbf{CLIP ViT-B/32}.
-  \item Patch chỉ được giữ khi $P(\phi_{\text{single}}(x)=1) > 0.8$.
-  \item Áp dụng cho \emph{cả hai nhánh} dương và âm.
+  \item Đảm bảo mẫu chỉ chứa duy nhất một đối tượng.
+  \item Thực hiện qua bộ phân loại nhị phân (Binary Classifier).
+  \item Áp dụng cho \emph{cả hai luồng} dương và âm.
 \end{itemize}
 \end{block}
 
@@ -390,7 +397,7 @@ Tự động phát hiện và tinh chỉnh các mẫu (exemplars) từ ảnh đ�
 \end{frame}
 
 % --- 2.1 (tiếp) NSM ---
-\begin{frame}[shrink=10]{2.1. Noise Suppression Module \& Counter -- NSM (tt.)}
+\begin{frame}[shrink=15]{2.1. Noise Suppression Module \& Counter -- NSM (tt.)}
 \scriptsize
 
 \setbeamercolor{block title}{bg=violet!75!black, fg=white}
@@ -427,21 +434,20 @@ D_n = \Gamma_{\text{decode}}(F^n_{\text{fuse}})
 \setbeamercolor{block title}{bg=red!70!black, fg=white}
 \setbeamercolor{block body}{bg=red!5!white}
 \begin{block}{\textbf{Pha 2: Hàm mất mát (Loss)}}
-Dạng \emph{margin-ReLU} contrastive (ổn định số học hơn dạng softmax gốc):
-\vspace{-0.3em}
-\[
-\mathcal{L}_{\text{pos}} = \frac{1}{HW}\sum_{i,j} M_{ij}(D^{(i,j)}_p - D^{(i,j)}_g)^2
-\]
-\[
-\mathcal{L}_{\text{neg}} = \frac{1}{HW}\sum_{i,j} M_{ij}(D^{(i,j)}_n - D^{(i,j)}_g)^2
-\]
-\[
-\mathcal{L}_{C} = \mathrm{ReLU}(\mathcal{L}_{\text{pos}} - \mathcal{L}_{\text{neg}} + m)
-\]
-\[
-\mathcal{L}_{\text{total}} = \mathcal{L}_{C} + \mathcal{L}_{\text{pos}}
-\]
-{\tiny $m=0.5$; $M$: Bernoulli mask ($p=0.8$) áp lên mỗi pixel.}
+\begin{itemize}\setlength{\itemsep}{2pt}
+  \item \textbf{Contrastive Loss ($\mathcal{L}_C$)} -- dạng Softmax, tăng xác suất luồng Dương, giảm luồng Âm:
+  \vspace{-0.4em}
+  \[
+  \mathcal{L}_C = -\log \frac{\exp(\mu(D_p, D_g))}{\exp(\mu(D_p,D_g))+\exp(\mu(D_n,D_g))}
+  \]
+  \item \textbf{Density Loss ($\mathcal{L}_D$)} -- MSE đảm bảo độ chính xác bản đồ mật độ:
+  \vspace{-0.4em}
+  \[
+  \mathcal{L}_D = \tfrac{1}{HW}\!\sum_{i,j}(D^{(i,j)}_p - D^{(i,j)}_g)^2
+  \]
+  \item \textbf{Tổng hàm mất mát:}
+  $\mathcal{L}_{\text{total}} = \mathcal{L}_C + \mathcal{L}_D$
+\end{itemize}
 \end{block}
 
 \end{column}
@@ -452,7 +458,7 @@ Dạng \emph{margin-ReLU} contrastive (ổn định số học hơn dạng softm
 \setbeamercolor{block title}{bg=purple!70!black, fg=white}
 \setbeamercolor{block body}{bg=purple!5!white}
 \begin{block}{\textbf{Ý nghĩa}}
-$\mathcal{L}_C$ ép $D_p$ luôn gần $D_g$ hơn $D_n$ ít nhất margin $m$. $\mathcal{L}_{\text{pos}}$ đảm bảo bản đồ mật độ dương khớp ground truth. Kết hợp cả hai: hệ thống vừa đếm đúng vừa loại nhiễu.
+$\mathcal{L}_C$ ép $D_p$ luôn gần $D_g$ hơn $D_n$. $\mathcal{L}_D$ đảm bảo bản đồ mật độ dương khớp ground truth. Kết hợp cả hai: hệ thống vừa đếm đúng vừa loại nhiễu.
 \end{block}
 
 \end{frame}
@@ -476,11 +482,11 @@ $\mathcal{L}_C$ ép $D_p$ luôn gần $D_g$ hơn $D_n$ ít nhất margin $m$. $\
 
 \setbeamercolor{block title}{bg=green!70!black, fg=white}
 \setbeamercolor{block body}{bg=green!5!white}
-\begin{block}{\textbf{Giải pháp: Gemini 2.0 Flash}}
+\begin{block}{\textbf{Giải pháp: Gemini 2.5 Flash}}
 \begin{itemize}
   \item \textbf{Positive Prompt:} mô tả đặc trưng thị giác cốt lõi (shape, color, material).
   \item \textbf{Negative Prompt:} mô tả nền, vật thể gây nhiễu.
-  \item \textbf{CLIP ViT-L/14 Re-ranking:} lọc ngữ nghĩa cấp hai, đảm bảo patch khớp tên lớp gốc.
+  \item \textbf{CLIP ViT-B/32 Re-ranking:} lọc ngữ nghĩa cấp hai, đảm bảo patch khớp tên lớp gốc.
   \item Top-3 $\to$ \textbf{Top-5} mẫu dương.
 \end{itemize}
 \end{block}
@@ -578,7 +584,7 @@ Your output for this image:
 
 \begin{center}
   \includegraphics[width=0.9\textwidth]{system_richprompt.png}
-  \captionof{figure}{Kiến trúc sau tích hợp Rich Prompt: Gemini sinh prompt $\to$ GroundingDINO $\to$ CLIP ViT-L/14 re-rank $\to$ NSM.}
+  \captionof{figure}{Kiến trúc sau tích hợp Rich Prompt: Gemini sinh prompt $\to$ GroundingDINO $\to$ CLIP ViT-B/32 re-rank $\to$ NSM.}
 \end{center}
 
 
@@ -593,10 +599,10 @@ Your output for this image:
 \begin{column}{0.48\textwidth}
 \setbeamercolor{block title}{bg=teal!70!black, fg=white}
 \setbeamercolor{block body}{bg=teal!5!white}
-\begin{block}{\textbf{Nhánh dương}}
+\begin{block}{\textbf{Luồng Dương}}
 \begin{itemize}
   \item Enhanced positive prompt $\to$ GroundingDINO.
-  \item CLIP ViT-L/14 re-rank theo tên lớp gốc.
+  \item CLIP ViT-B/32 re-rank theo tên lớp gốc.
   \item Chọn top-5 patch điểm CLIP cao nhất.
 \end{itemize}
 \end{block}
@@ -605,7 +611,7 @@ Your output for this image:
 \begin{column}{0.48\textwidth}
 \setbeamercolor{block title}{bg=red!70!black, fg=white}
 \setbeamercolor{block body}{bg=red!5!white}
-\begin{block}{\textbf{Nhánh âm}}
+\begin{block}{\textbf{Luồng Âm}}
 \begin{itemize}
   \item Enhanced negative prompt $\to$ GroundingDINO.
   \item Deduplication theo \emph{tên lớp gốc} (không dùng enhanced prompt).
@@ -621,7 +627,7 @@ Your output for this image:
 \begin{block}{\textbf{Lý giải lựa chọn kỹ thuật}}
 \begin{itemize}
   \item \textbf{CLIP Re-ranking cần thiết:} enhanced prompt khiến GroundingDINO ``nhạy'' hơn, trích xuất cả vật thể không phải mục tiêu. CLIP đóng vai trò bộ lọc ngữ nghĩa cấp hai.
-  \item \textbf{Dedup theo tên lớp gốc:} nếu dùng enhanced prompt cho NMS, nhiều hộp nền cần thiết cho nhánh âm bị loại nhầm.
+  \item \textbf{Dedup theo tên lớp gốc:} nếu dùng enhanced prompt cho NMS, nhiều hộp nền cần thiết cho luồng Âm bị loại nhầm.
   \item \textbf{Top-3 $\to$ Top-5:} enhanced prompt sinh nhiều ứng viên chất lượng hơn $\Rightarrow$ mở rộng $k$ để tận dụng.
 \end{itemize}
 \end{block}
@@ -642,8 +648,8 @@ Your output for this image:
 \begin{block}{\textbf{Vấn đề: GroundingDINO là bottleneck}}
 \begin{itemize}
   \item Chiếm $\sim$80\% thời gian xử lý mỗi ảnh.
-  \item 6\,146 ảnh FSC-147: $\approx$13 giờ (baseline), 25 giờ (+Rich Prompt).
-  \item Demo: $\sim$1,5s/ảnh chỉ cho bước phát hiện.
+  \item 6\,135 ảnh FSC-147: $\approx$13 giờ (baseline), 25 giờ (+Rich Prompt).
+  \item Demo: $\sim$1,2s/ảnh chỉ cho bước phát hiện (tương đương $\sim$80\% tổng pipeline).
 \end{itemize}
 \end{block}
 
@@ -882,6 +888,49 @@ VA-Count + YOLO-World & 19,03 & 131,55 \\
 
 \end{frame}
 
+% --- 3.4 SOTA Comparison ---
+\begin{frame}[shrink=5]{3.4. So sánh với các phương pháp tiêu biểu (SOTA)}
+\scriptsize
+
+\centering
+\renewcommand{\arraystretch}{1.2}
+\resizebox{0.98\textwidth}{!}{%
+\begin{tabular}{|l|l|l|c|c|}
+\hline
+\rowcolor{uitblue!15}
+\textbf{Nhóm} & \textbf{Phương pháp} & \textbf{Venue} & \textbf{MAE}$\downarrow$ & \textbf{RMSE}$\downarrow$ \\
+\hline
+\textit{Ref-less}  & FamNet               & CVPR'21  & 32{,}27          & 131{,}46 \\
+                   & CounTR               & BMVC'22  & \textbf{14{,}71} & 106{,}87 \\
+                   & LOCA                 & ICCV'23  & 16{,}22          & 103{,}96 \\
+\hline
+\textit{Few-shot}  & CounTR               & BMVC'22  & 11{,}95          & 91{,}23  \\
+                   & LOCA                 & ICCV'23  & \textbf{10{,}97} & \textbf{56{,}97} \\
+\hline
+\textit{Zero-shot} & ZSC                  & CVPR'23  & 22{,}09          & 115{,}17 \\
+                   & VA-Count (gốc)       & ECCV'24  & 17{,}88          & 129{,}31 \\
+\rowcolor{green!8} & VA-Count (nhóm)      & {--}     & 17{,}99          & 129{,}39 \\
+\rowcolor{green!8} & \quad +Rich Prompt   & {--}     & \textbf{17{,}80} & 129{,}69 \\
+\rowcolor{green!8} & \quad +YOLO-World    & {--}     & 19{,}03          & 131{,}55 \\
+\rowcolor{green!8} & \quad +YOLO+RP       & {--}     & 17{,}91          & 130{,}98 \\
+\hline
+\end{tabular}
+}
+
+\vspace{0.3em}
+
+\setbeamercolor{block title}{bg=blue!60!black, fg=white}
+\setbeamercolor{block body}{bg=blue!5!white}
+\begin{block}{\textbf{Nhận xét}}
+\begin{itemize}
+  \item Few-shot tốt nhất (LOCA, MAE $10{,}97$) hơn zero-shot $\approx 7$ điểm MAE -- giới hạn tự nhiên của zero-shot.
+  \item Hiện thực trung thực: MAE $17{,}99$ chỉ chênh $+0{,}11$ so với bài báo gốc ($17{,}88$).
+  \item Chênh lệch 4 cấu hình chỉ $1{,}23$ điểm MAE $\Rightarrow$ \textbf{bộ đếm (Counter)} là nhân tố quyết định.
+\end{itemize}
+\end{block}
+
+\end{frame}
+
 % --- 3.4 Extraction Time ---
 \begin{frame}{3.4. Thời gian trích xuất mẫu}
 \scriptsize
@@ -929,7 +978,7 @@ Hệ thống cho thấy khả năng đếm chính xác cao trên nhiều loại 
 \centering
 \begin{center}
   \includegraphics[width=0.95\textwidth]{vis1.png}
-  \captionof{figure}{Táo: GT$=33$, Pred$=32{,}67$. Sai số $1\%$.}
+  \captionof{figure}{Bi: GT$=11$, Pred$=11{,}2$. Sai số $1{,}8\%$.}
 \end{center}
 \end{column}
 
@@ -945,7 +994,7 @@ Hệ thống cho thấy khả năng đếm chính xác cao trên nhiều loại 
 \centering
 \begin{center}
   \includegraphics[width=0.95\textwidth]{vis3.png}
-  \captionof{figure}{Bi: GT$=11$, Pred$=11{,}2$. Sai số $1{,}8\%$.}
+  \captionof{figure}{Táo: GT$=33$, Pred$=32{,}67$. Sai số $1\%$.}
 \end{center}
 \end{column}
 \end{columns}
@@ -1013,9 +1062,6 @@ VA-Count + RP & 5,76 \\
     grid style={dashed,gray!40},
     legend pos=north east,
     legend style={font=\tiny, draw=gray!50},
-    nodes near coords,
-    every node near coord/.append style={font=\tiny, anchor=south west, xshift=2pt},
-    point meta=explicit symbolic,
     scatter/classes={
         a={mark=*,draw=blue!80,fill=blue!50,mark size=3pt},
         b={mark=square*,draw=red!80,fill=red!50,mark size=3pt},
@@ -1024,14 +1070,17 @@ VA-Count + RP & 5,76 \\
     },
 ]
 \addplot[scatter, only marks, scatter src=explicit symbolic]
-    table[x=latency, y=mae, meta=class] {
-        latency  mae    class  label
-        0.6006   19.03  a      {YOLO}
-        1.4710   17.99  b      {VA-Count}
-        2.4054   17.91  d      {YOLO+RP}
-        5.7578   17.80  c      {GDino+RP}
+    coordinates {
+        (0.6006, 19.03) [a]
+        (1.4710, 17.99) [b]
+        (2.4054, 17.91) [d]
+        (5.7578, 17.80) [c]
     };
 \legend{YOLO-World, VA-Count, YOLO+RP, GDino+RP}
+\node[font=\tiny, anchor=south west, xshift=2pt] at (axis cs:0.6006,19.03) {YOLO};
+\node[font=\tiny, anchor=south west, xshift=2pt] at (axis cs:1.4710,17.99) {VA-Count};
+\node[font=\tiny, anchor=south west, xshift=2pt] at (axis cs:2.4054,17.91) {YOLO+RP};
+\node[font=\tiny, anchor=south east, xshift=-2pt] at (axis cs:5.7578,17.80) {GDino+RP};
 \draw[->,thick,dashed,gray!60] (axis cs:3.0,19.5) -- (axis cs:0.8,17.5)
     node[pos=0.4,above,sloped,font=\tiny\itshape,text=gray]{tối ưu};
 \end{axis}
@@ -1064,10 +1113,10 @@ VA-Count + RP & 5,76 \\
     legend style={font=\tiny, draw=gray!50},
     mark options={solid},
 ]
-\addplot[blue!80, thick, mark=*,     mark size=2.5pt] table[x=bin_mid, y=baseline]   {../report/figures/mae_vs_density.dat};
-\addplot[red!80,  thick, mark=square*,mark size=2.5pt] table[x=bin_mid, y=richprompt] {../report/figures/mae_vs_density.dat};
-\addplot[teal!80, thick, mark=triangle*,mark size=2.5pt] table[x=bin_mid, y=yolo]     {../report/figures/mae_vs_density.dat};
-\addplot[orange!80,thick,mark=diamond*,mark size=3pt]  table[x=bin_mid, y=yolo_rp]   {../report/figures/mae_vs_density.dat};
+\addplot[blue!80, thick, mark=*,     mark size=2.5pt] table[x=bin_mid, y=baseline]   {figures/mae_vs_density.dat};
+\addplot[red!80,  thick, mark=square*,mark size=2.5pt] table[x=bin_mid, y=richprompt] {figures/mae_vs_density.dat};
+\addplot[teal!80, thick, mark=triangle*,mark size=2.5pt] table[x=bin_mid, y=yolo]     {figures/mae_vs_density.dat};
+\addplot[orange!80,thick,mark=diamond*,mark size=3pt]  table[x=bin_mid, y=yolo_rp]   {figures/mae_vs_density.dat};
 \legend{VA-Count, +Rich Prompt, +YOLO-World, +YOLO+RP}
 \end{axis}
 \end{tikzpicture}%
@@ -1111,10 +1160,10 @@ VA-Count + RP & 5,76 \\
     legend style={font=\tiny, draw=gray!50},
     mark options={solid},
 ]
-\addplot[blue!80, thick, mark=*,     mark size=2.5pt] table[x=bin_mid, y=baseline]   {../report/figures/mae_vs_size.dat};
-\addplot[red!80,  thick, mark=square*,mark size=2.5pt] table[x=bin_mid, y=richprompt] {../report/figures/mae_vs_size.dat};
-\addplot[teal!80, thick, mark=triangle*,mark size=2.5pt] table[x=bin_mid, y=yolo]     {../report/figures/mae_vs_size.dat};
-\addplot[orange!80,thick,mark=diamond*,mark size=3pt]  table[x=bin_mid, y=yolo_rp]   {../report/figures/mae_vs_size.dat};
+\addplot[blue!80, thick, mark=*,     mark size=2.5pt] table[x=bin_mid, y=baseline]   {figures/mae_vs_size.dat};
+\addplot[red!80,  thick, mark=square*,mark size=2.5pt] table[x=bin_mid, y=richprompt] {figures/mae_vs_size.dat};
+\addplot[teal!80, thick, mark=triangle*,mark size=2.5pt] table[x=bin_mid, y=yolo]     {figures/mae_vs_size.dat};
+\addplot[orange!80,thick,mark=diamond*,mark size=3pt]  table[x=bin_mid, y=yolo_rp]   {figures/mae_vs_size.dat};
 \legend{VA-Count, +Rich Prompt, +YOLO-World, +YOLO+RP}
 \end{axis}
 \end{tikzpicture}%
@@ -1205,7 +1254,7 @@ trên trường hợp này.
 \vspace{0.3em}
 \setbeamercolor{block title}{bg=orange!80!black, fg=white}
 \setbeamercolor{block body}{bg=orange!6!white}
-\begin{block}{\textbf{So sánh kết quả trên ảnh 716 (worst case}}
+\begin{block}{\textbf{So sánh kết quả trên ảnh 716 (worst case)}}
 Do năng lực nhận dạng ngữ nghĩa yếu hơn, YOLO-World chọn mẫu kém chính xác hơn, dẫn đến bản đồ mật độ phân tán và sai số đếm lớn hơn so với VA-Count gốc.
 \end{block}
 
@@ -1404,7 +1453,7 @@ streamlit run demo_app_advanced.py
 \setbeamercolor{block title}{bg=blue!70!black, fg=white}
 \setbeamercolor{block body}{bg=blue!5!white}
 \begin{block}{\textbf{Về kiến trúc}}
-VA-Count là thiết kế giàu thông tin học được, tách rõ giữa pha lấy mẫu (EEM) và pha sinh bản đồ mật độ (NSM). Nhánh dương/âm tạo điều kiện cho cơ chế học tương phản (contrastive), hữu hiệu cho zero-shot counting.
+VA-Count là thiết kế giàu thông tin học được, tách rõ giữa pha lấy mẫu (EEM) và pha sinh bản đồ mật độ (NSM). Luồng dương/âm tạo điều kiện cho cơ chế học tương phản (contrastive), hữu hiệu cho zero-shot counting.
 \end{block}
 
 \setbeamercolor{block title}{bg=teal!70!black, fg=white}
@@ -1422,9 +1471,8 @@ VA-Count là thiết kế giàu thông tin học được, tách rõ giữa pha 
 \setbeamercolor{block body}{bg=orange!6!white}
 \begin{block}{\textbf{Về cài đặt}}
 \begin{itemize}\setlength{\itemsep}{1pt}
-  \item Hàm tương phản dạng \emph{margin-ReLU} (tương đương softmax, ổn định số học hơn).
-  \item CLIP ViT-L/14 cho re-ranking; CLIP ViT-B/32 cho bộ phân loại nhị phân.
-  \item Gemini 2.0 Flash (\texttt{gemini-2.0-flash-exp}) thay Gemini 2.5 Flash.
+  \item CLIP ViT-B/32 cho cả re-ranking và bộ phân loại nhị phân.
+  \item Gemini 2.5 Flash (\texttt{gemini-2.5-flash}).
 \end{itemize}
 \end{block}
 
@@ -1453,7 +1501,7 @@ VA-Count là thiết kế giàu thông tin học được, tách rõ giữa pha 
 \begin{itemize}\setlength{\itemsep}{2pt}
   \item \textbf{Khử phân mảnh:} graph-based clustering, watershed hoặc head phụ dự đoán instance-aware density.
   \item \textbf{Mật độ dày đặc:} multi-resolution / tile-based inference để giữ chi tiết tại biên vật thể sát nhau.
-  \item \textbf{Khảo sát cài đặt:} softmax contrastive vs margin-ReLU; CLIP ViT-B/32 vs L/14; Gemini 2.5 Flash khi có quota.
+  \item \textbf{Khảo sát cài đặt:} CLIP ViT-B/32 vs L/14; Gemini 2.5 Flash khi có quota.
 \end{itemize}
 \end{block}
 \end{column}
@@ -1522,11 +1570,11 @@ CVPR, 2022.
 \end{frame}
 
 % ==================== THANK YOU ====================
-\begin{frame}{Cảm ơn!}
+\begin{frame}{Thank you!}
   \begin{center}
-    \Large Xin cảm ơn cô Dương Việt Hằng và các bạn! \\
+    \Large Thank you for your listening! \\
     \vspace{0.5cm}
-    \normalsize Hỏi đáp -- Demo
+    \normalsize Q\&A -- Demo
   \end{center}
 \end{frame}
 

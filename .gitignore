@@ -4,6 +4,9 @@ __pycache__/
 *.pyo
 *.pyd
 
+# Planning and project management files (e.g., from Notion, Trello, etc.)
+
+
 # Virtual environments
 .venv/
 venv/
@@ -95,4 +98,8 @@ docs/references/*
 
 # Drafts amd misc notes (never tracked)
 draft/
+
+# Reference materials (never tracked)
+reference/
+reference
 

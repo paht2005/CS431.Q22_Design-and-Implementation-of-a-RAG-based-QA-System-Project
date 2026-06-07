@@ -97,14 +97,11 @@ def get_args_parser():
                         help='class json file')
     return parser
 
-args = get_args_parser()
-args = args.parse_args()
 
 class ResizeSomeImage(object):
     def __init__(self, args):
-        args = get_args_parser()
-        args = args.parse_args()
-        # print(dir(args.im_dir.as_posix()))
+        # Use the args passed in directly; do not re-parse sys.argv here as that
+        # would discard runtime values (e.g. data_path) and impose wrong defaults.
         self.data_path = Path(args.data_path)
         self.im_dir = self.data_path/args.im_dir
         anno_file = self.data_path/args.anno_file
@@ -119,12 +116,14 @@ class ResizeSomeImage(object):
         self.train_set = data_split['train']
 
         self.class_dict = {}
-        if args.do_aug:
-            with open(args.class_file) as f:
-                for line in f:
-                    key = line.split()[0]
-                    val = line.split()[1:]
-                    self.class_dict[key] = val
+        if getattr(args, 'do_aug', False):
+            class_file = getattr(args, 'class_file', None)
+            if class_file and Path(class_file).exists():
+                with open(class_file) as f:
+                    for line in f:
+                        key = line.split()[0]
+                        val = line.split()[1:]
+                        self.class_dict[key] = val
 
 
 class ResizePreTrainImage(ResizeSomeImage):

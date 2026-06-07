@@ -1,6 +1,6 @@
 # `docs/`
 
-Documentation, reports, and presentation materials for the CS431.Q22 project
+Documentation, reports, and presentation materials for the CS338.Q21 project
 *"Zero-shot Object Counting with Good Exemplars"*.
 
 ## Contents
@@ -28,7 +28,7 @@ See [`report/README.md`](report/README.md) for prerequisite packages.
 ## Building the slides
 
 ```bash
-cd docs/slide
+cd docs/cs338-slide
 make            # Builds main.pdf via XeLaTeX
 make clean      # Remove auxiliary files
 ```
